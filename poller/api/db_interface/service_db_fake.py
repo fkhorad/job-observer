@@ -4,4 +4,5 @@ from poller.config import JSON_SERVICES
 
 
 def get_services():
-    return json.load(JSON_SERVICES)
+    with open(JSON_SERVICES, 'r') as json_in:
+        return json.load(json_in)

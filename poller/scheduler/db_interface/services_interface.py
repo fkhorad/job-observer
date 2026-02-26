@@ -1,14 +1,15 @@
-import json
 
-from poller.scheduler.service_dataclass import ServiceDefinition
-from poller.config import JSON_SERVICES, DEFAULT_SERVICE_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY
+from poller.scheduler.services_dataclass import ServiceDefinition
+from poller.config import DEFAULT_SERVICE_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY
+from poller.api.db_interface.db_interface import get_db as get_api_db
 
 
-def read_services(path: str = JSON_SERVICES):
-    raw = json.load(path)
+def import_services():
+    with get_api_db() as api_db:
+        services_raw = api_db.get_services()
+
     services = {}
-
-    for name, cfg in raw.items():
+    for name, cfg in services_raw.items():
         services[name] = ServiceDefinition(
             name=name,
             method=cfg["method"],
@@ -26,4 +27,4 @@ def read_services(path: str = JSON_SERVICES):
 
 
 # Service constant, to export
-SERVICES = read_services()
+SERVICES = import_services()

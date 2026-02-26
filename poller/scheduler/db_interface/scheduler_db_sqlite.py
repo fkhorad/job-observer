@@ -1,15 +1,14 @@
 import sqlite3
-from pathlib import Path
 
 from poller.config import SCHEDULER_DB, REPLACE_SCHEDULER_DB
 from poller.config import UNKNOWN_STATUS
-from poller.scheduler.helpers.helpers import utcnow, utcnow_filename
+from poller.general_helpers import utcnow, backup_file
 
 
 def init_sqlite_db():
 
     if REPLACE_SCHEDULER_DB:
-        backup_old_db()
+        backup_file(SCHEDULER_DB)
 
     # Create tables (AND db file)
     with sqlite3.connect(SCHEDULER_DB) as conn:
@@ -42,9 +41,10 @@ def init_sqlite_db():
 
 # LAST SEQ (=last job imported from api_db)
 def get_last_seq(conn):
-    return conn.execute(
+    last_seq = conn.execute(
         "SELECT last_seq FROM controller_cursor WHERE id=1"
     ).fetchone()[0]
+    return {'last_seq': last_seq}
 #
 def update_last_seq(conn, last_seq):
     conn.execute(
@@ -98,16 +98,5 @@ def update_job(conn, job_id, new_state, unchanged_count, next_poll, is_terminal)
     ))
 
 
-# Helpers
-def backup_old_db():
-
-    file = Path(SCHEDULER_DB)
-    if not file.exists():
-        return
-
-    timestamp = utcnow_filename()
-    backup = file.with_name(f"{file.name}_{timestamp}.bak")
-
-    file.rename(backup)
 
 

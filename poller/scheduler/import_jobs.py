@@ -1,23 +1,20 @@
-import sqlite3
 
-from poller.config import API_DB, DEF_BATCH
+from poller.api.db_interface.db_interface import get_db as get_api_db
+from poller.scheduler.db_interface.db_interface import get_db
 
+def import_jobs():
 
-def import_jobs(db, batch=DEF_BATCH):
+    # TODO: consider if it is best to separate sched_db transactions
+    with get_db() as sched_db:
+        new_jobs_parameters = sched_db.get_new_jobs_parameters()
 
-    last_seq = db.get_last_seq()
+        with get_api_db() as api_db:
+            rows = api_db.get_new_jobs(new_jobs_parameters)
 
-    with sqlite3.connect(API_DB) as api_conn:
-        rows = api_conn.execute("""
-            SELECT seq, job_id, service
-            FROM job_requests
-            WHERE seq > ?
-            ORDER BY seq
-            LIMIT ?
-        """, (last_seq, batch)).fetchall()
+        for job_id, service in rows:
+            sched_db.insert_job(job_id, service)
 
-    for seq, job_id, service in rows:
-        db.insert_job(job_id, service)
-        last_seq = seq
+        if rows:
+            sched_db.update_new_jobs_parameters(rows)
 
-    db.update_last_seq(last_seq)
+        return sched_db.get_due_jobs()

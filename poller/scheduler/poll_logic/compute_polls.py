@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from poller.config import MIN_BACKOFF, MAX_BACKOFF
-from poller.scheduler.helpers.helpers import utcnow
+from poller.general_helpers import utcnow
 
 
 def compute_next_poll(unchanged_count):

@@ -1,15 +1,15 @@
 import asyncio
 import httpx
 
-from poller.scheduler.db_interface.read_services import SERVICES
+from poller.scheduler.db_interface.services_interface import SERVICES
 from poller.scheduler.http_client import fetch_status
 from poller.scheduler.poll_logic.compute_polls import compute_next_poll
 from poller.scheduler.import_jobs import import_jobs
 from poller.scheduler.db_interface.db_interface import init_db, get_db
-from poller.config import SCHEDULER_INTERVAL, RUN_ONCE
+from poller.config import SCHEDULER_INTERVAL, RUN_ONCE, GLOBAL_CONCURRENCY
 
 
-async def poll_service(db, client, job):
+async def poll_service(client, job):
 
     job_id, service_name, old_state, unchanged_count = job
     service = SERVICES[service_name]
@@ -31,48 +31,67 @@ async def poll_service(db, client, job):
     #
     is_terminal = new_state in service.terminal_states
 
-    # DB update
-    db.update_job(job_id, new_state, unchanged_count, next_poll, is_terminal)
+    return {'job_id': job_id, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal}
 
 
 # Heartbeat function
 async def reconciliation_cycle():
 
-    db = get_db()
+    jobs = import_jobs()
 
-    import_jobs(db)
-
-    jobs = db.get_due_jobs()
+    semaphores = {
+        name: asyncio.Semaphore(s.max_concurrency)
+        for name, s in SERVICES.items()
+    }
+    global_semaphore = asyncio.Semaphore(GLOBAL_CONCURRENCY)
 
     async with httpx.AsyncClient() as client:
         tasks = []
-        semaphores = {
-            name: asyncio.Semaphore(s.max_concurrency)
-            for name, s in SERVICES.items()
-        }
 
         async def guarded(job):
             service = SERVICES.get(job[1])
             if service is None:
-                return
-            
-            async with semaphores[service.name]:
-                await poll_service(db, client, job)
+                return {
+                    "job": job,
+                    "status": "skipped",
+                    "reason": "unknown service",
+                }
+        
+            try:
+                async with global_semaphore:
+                    async with semaphores[service.name]:
+                        result = await poll_service(client, job)
 
-        for job in jobs:
-            tasks.append(guarded(job))
+                return {
+                    "job": job,
+                    "status": "ok",
+                    "result": result,
+                }
 
-        await asyncio.gather(*tasks)
+            except Exception as e:
+                return {
+                    "job": job,
+                    "status": "error",
+                    "error": str(e),
+                }
 
-    db.clean()
+        tasks = [guarded(job) for job in jobs]
+        dressed_results = await asyncio.gather(*tasks)
 
-
-# RUN
+        # DB update
+        with get_db() as db:
+            for dressed_result in dressed_results:
+                try:
+                    db.update_job(dressed_result['result'])
+                except:
+                    pass
 
 def init():
+    # Could contain more init steps
     init_db()
 
 
+# RUN
 async def start():
 
     init()
@@ -88,8 +107,5 @@ async def start():
         await asyncio.sleep(SCHEDULER_INTERVAL)
 
 
-def run():
-    asyncio.run(start())
-
 if __name__ == "__main__":
-    run()
+    asyncio.run(start())
