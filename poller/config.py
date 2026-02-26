@@ -1,17 +1,38 @@
 from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent
+# Paths
+BASE_PATH = Path(__file__).resolve().parent
+BASE_FOLDER = str(BASE_PATH) + '/'
 
-DATA_DIR = BASE_DIR/"data"
-DATA_DIR.mkdir(exist_ok=True)
+DATA_FOLDER = f'{BASE_FOLDER}data'
+Path(DATA_FOLDER).mkdir(exist_ok=True)
 
-API_DB = DATA_DIR/"job_requests.db"
-SCHEDULER_DB = DATA_DIR/"scheduler.db"
-#
-DEF_BATCH = 100
-UNKNOWN = 'unknown'
-#
-CLIENT_TIMEOUT = 2
+
+# DBs
+API_DB = f'{DATA_FOLDER}job_requests.db'
+
+JSON_SERVICES = f'{DATA_FOLDER}services.json'
+
+# sqlite scheduler DB parameters
+REPLACE_SCHEDULER_DB = False
+SCHEDULER_DB = f'{DATA_FOLDER}scheduler.db'
+
+
+# Scheduler parameters
 SCHEDULER_INTERVAL = 5
+DEF_BATCH = 100
+UNKNOWN_STATUS = 'unknown'
+RUN_ONCE = False
+#
+MIN_BACKOFF = 2 # seconds
+MAX_BACKOFF = 60 # seconds
+
+
+# Service parameters
+DEFAULT_STATUS_FIELD = 'status'
+DEFAULT_SERVICE_MAX_CONCURRENCY = 10
+DEFAULT_SERVICE_TIMEOUT = 2
+
+
 

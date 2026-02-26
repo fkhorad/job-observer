@@ -1,54 +1,48 @@
 import asyncio
-import sqlite3
 import httpx
-from datetime import datetime, timezone
 
-from poller.define_services import SERVICES
+from poller.scheduler.db_interface.read_services import SERVICES
 from poller.scheduler.http_client import fetch_status
-from poller.scheduler.poll_computation import compute_next_poll
-from poller.scheduler.importer import import_jobs
-from poller.scheduler.scheduler_db import init_scheduler_db, get_due_jobs
-from poller.config import API_DB, SCHEDULER_DB as SCHED_DB, SCHEDULER_INTERVAL
+from poller.scheduler.poll_logic.compute_polls import compute_next_poll
+from poller.scheduler.import_jobs import import_jobs
+from poller.scheduler.db_interface.db_interface import init_db, get_db
+from poller.config import SCHEDULER_INTERVAL, RUN_ONCE
 
 
-SCHEDULER_INTERVAL = 2
+async def poll_service(db, client, job):
 
-async def poll_service(con, client, job):
-    job_id, service_name, old_state, unchanged = job
+    job_id, service_name, old_state, unchanged_count = job
     service = SERVICES[service_name]
 
+    # HTTP request to external service
     new_state = await fetch_status(client, service, job_id)
-    if new_state is None:
+    if new_state is None: # None here means request failed; exit without updating job
         return
 
-    terminal = new_state in service.terminal_states
-    next_poll, unchanged = compute_next_poll(old_state, new_state, unchanged)
+    # Update job
 
-    con.execute("""
-        UPDATE job_state
-        SET observed_state=?,
-            unchanged_count=?,
-            next_poll_at=?,
-            is_terminal=?,
-            updated_at=?
-        WHERE job_id=?
-    """, (
-        new_state,
-        unchanged,
-        next_poll.isoformat(),
-        int(terminal),
-        datetime.now(timezone.utc).isoformat(),
-        job_id
-    ))
+    # Get update params
+    if new_state != old_state:
+        unchanged_count = 0
+    else:
+        unchanged_count += 1
+    #
+    next_poll = compute_next_poll(unchanged_count)
+    #
+    is_terminal = new_state in service.terminal_states
+
+    # DB update
+    db.update_job(job_id, new_state, unchanged_count, next_poll, is_terminal)
 
 
+# Heartbeat function
 async def reconciliation_cycle():
-    api_con = sqlite3.connect(API_DB)
-    con = sqlite3.connect(SCHED_DB)
 
-    import_jobs(api_con, con)
+    db = get_db()
 
-    jobs = get_due_jobs(con)
+    import_jobs(db)
+
+    jobs = db.get_due_jobs()
 
     async with httpx.AsyncClient() as client:
         tasks = []
@@ -63,32 +57,39 @@ async def reconciliation_cycle():
                 return
             
             async with semaphores[service.name]:
-                await poll_service(con, client, job)
+                await poll_service(db, client, job)
 
         for job in jobs:
             tasks.append(guarded(job))
 
         await asyncio.gather(*tasks)
 
-    con.commit()
-    con.close()
-    api_con.close()
+    db.clean()
 
 
-async def loop():
-    init_scheduler_db()
+# RUN
+
+def init():
+    init_db()
+
+
+async def start():
+
+    init()
+
+    # For debugging
+    if RUN_ONCE:
+        await reconciliation_cycle()
+        return
+
+    # Main loop
     while True:
         await reconciliation_cycle()
         await asyncio.sleep(SCHEDULER_INTERVAL)
 
 
 def run():
-    asyncio.run(loop())
-
-
-def run_once():
-    asyncio.run(reconciliation_cycle())
-
+    asyncio.run(start())
 
 if __name__ == "__main__":
     run()
