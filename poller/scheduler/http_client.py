@@ -1,3 +1,5 @@
+import httpx
+
 
 async def fetch_status(client, service, job_id):
     try:
@@ -10,10 +12,11 @@ async def fetch_status(client, service, job_id):
             timeout=service.timeout,
         )
         r.raise_for_status()
-        return r.json().get(service.status_field)
+        return {'response_status': 'OK', 'service_status': r.json().get(service.status_field)}
     
-    except Exception:
-        return None
+    except httpx.HTTPStatusError as e:
+        status_code = e.response.status_code
+        return {'response_status': str(status_code), 'service_status': None}
 
 
 # Helper for request parameters definition

@@ -22,7 +22,7 @@ SCHEDULER_DB = f'{DATA_FOLDER}scheduler.db'
 
 
 # Scheduler parameters
-SCHEDULER_INTERVAL = 5
+SCHEDULER_INTERVAL = 8
 DEF_BATCH = 100
 UNKNOWN_STATUS = 'unknown'
 RUN_ONCE = False

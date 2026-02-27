@@ -31,9 +31,9 @@ def add_job(req: PostJobRequest):
 # GET: /job_status --> get job(s) status and aux parameter by JOB_ID; in principle it can return more than one (due to absence of service ID) -- TODO: discuss!
 @app.get("/job_status")
 def get_job_status(job_id: str):
-    sched_db = get_scheduler_db()
-    jobs = sched_db.get_jobs_by_id(job_id)
-    return {'jobs': jobs}
+    with get_scheduler_db() as sched_db:
+        jobs = sched_db.get_jobs_by_id(job_id)
+        return {'jobs': jobs}
 
 
 # GET: /services --> returns service list (with all configuration parameters)

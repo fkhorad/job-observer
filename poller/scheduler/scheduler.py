@@ -7,7 +7,15 @@ from poller.scheduler.poll_logic.compute_polls import compute_next_poll
 from poller.scheduler.import_jobs import import_jobs
 from poller.scheduler.db_interface.db_interface import init_db, get_db
 from poller.config import SCHEDULER_INTERVAL, RUN_ONCE, GLOBAL_CONCURRENCY
+import logging
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+
+logger = logging.getLogger("worker")
 
 async def poll_service(client, job):
 
@@ -15,8 +23,12 @@ async def poll_service(client, job):
     service = SERVICES[service_name]
 
     # HTTP request to external service
-    new_state = await fetch_status(client, service, job_id)
-    if new_state is None: # None here means request failed; exit without updating job
+    status_response = await fetch_status(client, service, job_id)
+    if status_response['response_status']=='OK':
+        new_state = status_response['service_status']
+    elif status_response['response_status']=='404':
+        new_state = 'NOT_FOUND'
+    else: # None here means request failed and is not being traced; exit without updating job
         return
 
     # Update job
@@ -29,7 +41,10 @@ async def poll_service(client, job):
     #
     next_poll = compute_next_poll(unchanged_count)
     #
-    is_terminal = new_state in service.terminal_states
+    is_terminal = (
+        new_state in service.terminal_states
+        or (new_state == "NOT_FOUND" and unchanged_count >= 3)
+    )
 
     return {'job_id': job_id, 'service': service_name, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal}
 
@@ -38,6 +53,8 @@ async def poll_service(client, job):
 async def reconciliation_cycle():
 
     jobs = import_jobs()
+
+    logger.info('JOBS: ' + str(jobs))
 
     semaphores = {
         name: asyncio.Semaphore(s.max_concurrency)
@@ -83,8 +100,8 @@ async def reconciliation_cycle():
             for dressed_result in dressed_results:
                 try:
                     db.update_job(dressed_result['result'])
-                except:
-                    pass
+                except Exception as err:
+                    logger.error(err)
 
 def init():
     # Could contain more init steps
@@ -103,6 +120,7 @@ async def start():
 
     # Main loop
     while True:
+        logger.info("Scheduler Tick")
         await reconciliation_cycle()
         await asyncio.sleep(SCHEDULER_INTERVAL)
 

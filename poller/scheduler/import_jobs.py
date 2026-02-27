@@ -11,7 +11,7 @@ def import_jobs():
         with get_api_db() as api_db:
             rows = api_db.get_new_jobs(new_jobs_parameters)
 
-        for job_id, service in rows:
+        for _, job_id, service in rows:
             sched_db.insert_job(job_id, service)
 
         if rows:

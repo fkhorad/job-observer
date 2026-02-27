@@ -4,6 +4,8 @@ from poller.config import SCHEDULER_DB, REPLACE_SCHEDULER_DB
 from poller.config import UNKNOWN_STATUS
 from poller.general_helpers import utcnow, backup_file, timestamp_for_db
 
+def dict_factory(cursor, row):
+    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 
 def init_sqlite_db():
 
@@ -64,8 +66,9 @@ def insert_job(conn, job_id, service):
     """, (job_id, service, UNKNOWN_STATUS))
 
 def get_jobs_by_id(conn, job_id):
+    conn.row_factory = dict_factory
     return conn.execute("""
-        SELECT job_id, service, observed_state, unchanged_count
+        SELECT job_id, service, observed_state, unchanged_count, is_terminal
         FROM job_state
         WHERE job_id = ?
     """, (job_id, )).fetchall()
@@ -89,10 +92,10 @@ def update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_
             is_terminal=?,
             terminal_at =
                 CASE
-                    WHEN is_terminal = 1 AND terminal_at IS NULL THEN datetime('now')
+                    WHEN is_terminal = 1 AND terminal_at IS NULL THEN ?
                     ELSE terminal_at
                 END,
-            updated_at=datetime('now')
+            updated_at=?
         WHERE job_id=? AND service=?
     """, (
         new_state,

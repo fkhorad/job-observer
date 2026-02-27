@@ -28,35 +28,50 @@
 <body>
 
   <h2>Start Job</h2>
-  <button id="startBtn">Start Job</button>
+  <button id="startBtn-1">Start Job</button>
 
   <div id="status">Idle</div>
 
   <script>
-    const startBtn = document.getElementById("startBtn");
+    const startBtn1 = document.getElementById("startBtn-1");
+    const startBtn2 = document.getElementById("startBtn-2");
     const statusDiv = document.getElementById("status");
 
     let pollingInterval = null;
 
     // ---- MOCK ENDPOINT URLs ----
-    const POST_ENDPOINT = "https://example.com/api/jobs";
-    const GET_ENDPOINT = "https://example.com/api/jobs/status";
+    const FIRST_POST_ENDPOINT = "/api/first/job";
+    const FIRST_SECOND_ENDPOINT = "/api/second/job";
+    const POLLING_REGISTRATION_ENDPOINT = "/api/add_job";
+    const POLL_ENDPOINT = "/api/job_status";
 
-    startBtn.addEventListener("click", async () => {
-      statusDiv.innerText = "Sending POST request...";
+    startBtn1.addEventListener("click", startJob);
 
-      // Mock request body
-      const requestBody = {
-        task: "generate-report",
-        parameters: {
-          userId: 123,
-          format: "pdf"
-        }
-      };
+
+    async function startJob(){
 
       try {
         // ---- POST REQUEST ----
-        const response = await fetch(POST_ENDPOINT, {
+        const response = await fetch(FIRST_POST_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+
+        const jobId = data.job_id;
+        statusDiv.innerText = "Job started. JobID: " + jobId;
+
+        // Register to polling service
+        const requestBody = {
+          job_id: jobId,
+          service: "mock"
+        };
+
+        const reg_res = await fetch(POLLING_REGISTRATION_ENDPOINT, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -64,20 +79,13 @@
           body: JSON.stringify(requestBody)
         });
 
-        // ---- MOCK RESPONSE ----
-        // In real scenario: const data = await response.json();
-        const data = { jobId: "JOB-" + Math.floor(Math.random() * 10000) };
-
-        const jobId = data.jobId;
-        statusDiv.innerText = "Job started. JobID: " + jobId;
-
         startPolling(jobId);
 
       } catch (error) {
         statusDiv.innerText = "Error starting job.";
         console.error(error);
       }
-    });
+    }
 
     function startPolling(jobId) {
       let counter = 0;
@@ -88,18 +96,18 @@
 
         try {
           // ---- GET REQUEST ----
-          const response = await fetch(`${GET_ENDPOINT}?jobId=${jobId}`);
+          const response = await fetch(`${POLL_ENDPOINT}?job_id=${jobId}`);
 
           // ---- MOCK STATUS RESPONSE ----
-          // In real scenario: const data = await response.json();
-          const data = {
-            jobId: jobId,
-            status: counter >= 5 ? "completed" : "processing"
-          };
+          const response_data = await response.json();
+          console.log('Check status data', response_data);
+          const data_list = response_data['jobs']
+          console.log('Check status data', data_list);
+          const data = data_list.length ? data_list[0] : {'observed_state': 'unknown'};
 
-          statusDiv.innerText = `Job ${jobId} status: ${data.status}`;
+          statusDiv.innerText = `Service mock Job ${jobId} status: ${data.observed_state}`;
 
-          if (data.status === "completed") {
+          if (data.is_terminal) {
             clearInterval(pollingInterval);
             statusDiv.innerText += " ✅ Done!";
           }
@@ -109,7 +117,7 @@
           console.error(error);
         }
 
-      }, 2000); // every 2 seconds
+      }, 4000); // every 2 seconds
     }
   </script>
 

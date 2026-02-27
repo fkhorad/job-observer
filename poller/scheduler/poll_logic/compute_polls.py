@@ -8,7 +8,7 @@ def compute_next_poll(unchanged_count):
 
     now = utcnow()
     delay = get_delay(unchanged_count)
-    return now + timedelta(seconds=delay), unchanged_count
+    return now + timedelta(seconds=delay)
 
 
 def get_delay(unchanged_count):
