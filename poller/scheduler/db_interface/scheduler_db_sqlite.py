@@ -2,7 +2,7 @@ import sqlite3
 
 from poller.config import SCHEDULER_DB, REPLACE_SCHEDULER_DB
 from poller.config import UNKNOWN_STATUS
-from poller.general_helpers import utcnow, backup_file
+from poller.general_helpers import utcnow, backup_file, timestamp_for_db
 
 
 def init_sqlite_db():
@@ -33,7 +33,9 @@ def init_sqlite_db():
             unchanged_count INTEGER NOT NULL DEFAULT 0,
             next_poll_at TEXT NOT NULL,
             is_terminal INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            terminal_at DATETIME,
+            UNIQUE(job_id, service)
         )
         """)
 
@@ -57,10 +59,8 @@ def update_last_seq(conn, last_seq):
 
 def insert_job(conn, job_id, service):
     conn.execute("""
-        INSERT INTO job_state(job_id, service, observed_state, next_poll_at, updated_at)
+        INSERT OR IGNORE INTO job_state(job_id, service, observed_state, next_poll_at, updated_at)
         VALUES(?, ?, ?, datetime('now'), datetime('now'))
-        ON CONFLICT(job_id) DO UPDATE SET
-            service=excluded.service
     """, (job_id, service, UNKNOWN_STATUS))
 
 def get_jobs_by_id(conn, job_id):
@@ -77,24 +77,32 @@ def get_due_jobs(conn):
         FROM job_state
         WHERE is_terminal = 0
         AND next_poll_at <= ?
-    """, (utcnow(),)).fetchall()
+    """, (timestamp_for_db(utcnow()),)).fetchall()
 
-def update_job(conn, job_id, new_state, unchanged_count, next_poll, is_terminal):
+def update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal):
+    now = timestamp_for_db(utcnow())
     conn.execute("""
         UPDATE job_state
         SET observed_state=?,
             unchanged_count=?,
             next_poll_at=?,
             is_terminal=?,
-            updated_at=?
-        WHERE job_id=?
+            terminal_at =
+                CASE
+                    WHEN is_terminal = 1 AND terminal_at IS NULL THEN datetime('now')
+                    ELSE terminal_at
+                END,
+            updated_at=datetime('now')
+        WHERE job_id=? AND service=?
     """, (
         new_state,
         unchanged_count,
-        next_poll.isoformat(),
+        timestamp_for_db(next_poll),
         int(is_terminal),
-        utcnow(),
-        job_id
+        now,
+        now,
+        job_id,
+        service
     ))
 
 

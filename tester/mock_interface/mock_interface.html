@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Job Runner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f4f4f4;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+      min-height: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Start Job</h2>
+  <button id="startBtn">Start Job</button>
+
+  <div id="status">Idle</div>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const statusDiv = document.getElementById("status");
+
+    let pollingInterval = null;
+
+    // ---- MOCK ENDPOINT URLs ----
+    const POST_ENDPOINT = "https://example.com/api/jobs";
+    const GET_ENDPOINT = "https://example.com/api/jobs/status";
+
+    startBtn.addEventListener("click", async () => {
+      statusDiv.innerText = "Sending POST request...";
+
+      // Mock request body
+      const requestBody = {
+        task: "generate-report",
+        parameters: {
+          userId: 123,
+          format: "pdf"
+        }
+      };
+
+      try {
+        // ---- POST REQUEST ----
+        const response = await fetch(POST_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        // ---- MOCK RESPONSE ----
+        // In real scenario: const data = await response.json();
+        const data = { jobId: "JOB-" + Math.floor(Math.random() * 10000) };
+
+        const jobId = data.jobId;
+        statusDiv.innerText = "Job started. JobID: " + jobId;
+
+        startPolling(jobId);
+
+      } catch (error) {
+        statusDiv.innerText = "Error starting job.";
+        console.error(error);
+      }
+    });
+
+    function startPolling(jobId) {
+      let counter = 0;
+
+      pollingInterval = setInterval(async () => {
+        counter++;
+        statusDiv.innerText = "Checking status for " + jobId + "...";
+
+        try {
+          // ---- GET REQUEST ----
+          const response = await fetch(`${GET_ENDPOINT}?jobId=${jobId}`);
+
+          // ---- MOCK STATUS RESPONSE ----
+          // In real scenario: const data = await response.json();
+          const data = {
+            jobId: jobId,
+            status: counter >= 5 ? "completed" : "processing"
+          };
+
+          statusDiv.innerText = `Job ${jobId} status: ${data.status}`;
+
+          if (data.status === "completed") {
+            clearInterval(pollingInterval);
+            statusDiv.innerText += " ✅ Done!";
+          }
+
+        } catch (error) {
+          statusDiv.innerText = "Error checking job status.";
+          console.error(error);
+        }
+
+      }, 2000); // every 2 seconds
+    }
+  </script>
+
+</body>
+</html>

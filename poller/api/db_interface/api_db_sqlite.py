@@ -19,7 +19,7 @@ def init_sqlite_db():
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_job ON job_requests(job_id)")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_job ON job_requests(job_id)")
 
 
 def get_new_jobs(last_seq, batch):

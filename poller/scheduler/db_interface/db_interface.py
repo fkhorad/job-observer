@@ -45,12 +45,13 @@ class SQLITE_DB:
     
     def update_job(self, result):
         job_id = result['job_id']
+        service = result['service']
         new_state = result['new_state']
         unchanged_count = result.get('unchanged_count', 0)
         next_poll = result['next_poll']
         is_terminal = result['is_terminal']
 
-        update_job(self.conn, job_id, new_state, unchanged_count, next_poll, is_terminal)
+        update_job(self.conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal)
 
     def get_jobs_by_id(self, job_id):
         return get_jobs_by_id(self.conn, job_id)

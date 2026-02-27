@@ -31,7 +31,7 @@ async def poll_service(client, job):
     #
     is_terminal = new_state in service.terminal_states
 
-    return {'job_id': job_id, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal}
+    return {'job_id': job_id, 'service': service_name, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal}
 
 
 # Heartbeat function

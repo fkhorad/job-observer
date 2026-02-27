@@ -3,11 +3,13 @@ from pathlib import Path
 
 
 def utcnow():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(timezone.utc)
 
+def timestamp_for_filename(datetime_):
+    return datetime_.strftime('%Y-%m-%d_T%H-%M-%S.%fZ')
 
-def utcnow_filename():
-    return datetime.now(timezone.utc).strftime('%Y-%m-%d_T%H-%M-%S.%fZ')
+def timestamp_for_db(datetime_):
+    return datetime_.strftime('%Y-%m-%d_T%H:%M:%S.%fZ')
 
 
 def backup_file(path):
@@ -16,7 +18,7 @@ def backup_file(path):
     if not file.exists():
         return
 
-    timestamp = utcnow_filename()
+    timestamp = timestamp_for_filename(utcnow())
     backup = file.with_name(f"{file.name}_{timestamp}.bak")
 
     file.rename(backup)
