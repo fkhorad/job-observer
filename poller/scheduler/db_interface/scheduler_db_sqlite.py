@@ -1,6 +1,6 @@
 import sqlite3
 
-from poller.config import SCHEDULER_DB, REPLACE_SCHEDULER_DB
+from poller.config import SCHEDULER_DB, REPLACE_DBS
 from poller.config import UNKNOWN_STATUS
 from poller.general_helpers import utcnow, backup_file, timestamp_for_db
 
@@ -9,7 +9,7 @@ def dict_factory(cursor, row):
 
 def init_sqlite_db():
 
-    if REPLACE_SCHEDULER_DB:
+    if REPLACE_DBS:
         backup_file(SCHEDULER_DB)
 
     # Create tables (AND db file)

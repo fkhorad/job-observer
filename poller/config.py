@@ -10,14 +10,13 @@ Path(DATA_FOLDER).mkdir(exist_ok=True)
 
 
 # DBs
+REPLACE_DBS = False
 
 # sqlite API DB parameters
 API_DB = f'{DATA_FOLDER}job_requests.db'
-REPLACE_API_DB = False
 JSON_SERVICES = f'{DATA_FOLDER}services.json'
 
 # sqlite scheduler DB parameters
-REPLACE_SCHEDULER_DB = False
 SCHEDULER_DB = f'{DATA_FOLDER}scheduler.db'
 
 

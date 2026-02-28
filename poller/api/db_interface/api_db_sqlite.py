@@ -1,12 +1,12 @@
 import sqlite3
 
-from poller.config import API_DB as DB, REPLACE_API_DB
+from poller.config import API_DB as DB, REPLACE_DBS
 from poller.general_helpers import backup_file
 
 
 def init_sqlite_db():
 
-    if REPLACE_API_DB:
+    if REPLACE_DBS:
         backup_file(DB)
 
 
