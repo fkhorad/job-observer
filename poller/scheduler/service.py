@@ -78,7 +78,7 @@ class Service:
     async def _build_request(self, client, job_id):
         await self._ensure_token(client)
 
-        headers = dict(self.headers)
+        headers = dict(self.static_headers)
 
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"

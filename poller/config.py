@@ -10,7 +10,7 @@ Path(DATA_FOLDER).mkdir(exist_ok=True)
 
 
 # DBs
-REPLACE_DBS = False
+REPLACE_DBS = True
 
 # sqlite API DB parameters
 API_DB = f'{DATA_FOLDER}job_requests.db'
