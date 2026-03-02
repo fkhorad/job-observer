@@ -1,7 +1,7 @@
 
 from poller.scheduler.service import Service
 from poller.config import DEFAULT_SERVICE_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY
-from poller.api.db_interface.db_interface import get_db as get_api_db
+from poller.api.db_interface.api_db_interface import get_db as get_api_db
 
 
 def import_services():

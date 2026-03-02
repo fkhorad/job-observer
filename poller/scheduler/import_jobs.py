@@ -1,6 +1,6 @@
 
-from poller.api.db_interface.db_interface import get_db as get_api_db
-from poller.scheduler.db_interface.db_interface import get_db
+from poller.api.db_interface.api_db_interface import get_db as get_api_db
+from poller.scheduler.db_interface.scheduler_db_interface import get_db
 
 def import_jobs():
 

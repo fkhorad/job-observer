@@ -4,8 +4,10 @@ from poller.config import SCHEDULER_DB, REPLACE_DBS
 from poller.config import UNKNOWN_STATUS
 from poller.general_helpers import utcnow, backup_file, timestamp_for_db
 
-def dict_factory(cursor, row):
-    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+
+##################
+# DB (RE)CREATION
+##################
 
 def init_sqlite_db():
 
@@ -41,9 +43,14 @@ def init_sqlite_db():
         )
         """)
 
+
 ##########
 # QUERIES
 ##########
+
+# Helper
+def dict_factory(cursor, row):
+    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 
 # LAST SEQ (=last job imported from api_db)
 def get_last_seq(conn):
@@ -54,9 +61,28 @@ def get_last_seq(conn):
 
 
 # JOBS
+
+## GET info
+def get_jobs_by_id(conn, job_id):
+    conn.row_factory = dict_factory
+    return conn.execute("""
+        SELECT job_id, service, observed_state, unchanged_count, is_terminal
+        FROM job_state
+        WHERE job_id = ?
+    """, (job_id, )).fetchall()
+#
+def get_due_jobs(conn):
+    return conn.execute("""
+        SELECT job_id, service, observed_state, unchanged_count
+        FROM job_state
+        WHERE is_terminal = 0
+        AND next_poll_at <= ?
+    """, (timestamp_for_db(utcnow()),)).fetchall()
+
+## Insert/Update
 def insert_jobs(conn, job_rows):
     try:
-        conn.execute("BEGIN IMMEDIATE;")
+        conn.execute("BEGIN IMMEDIATE;") # Manual handling as I want multiple executes in single transaction in autocommit mode
         #
         for _, job_id, service in job_rows:
             _insert_job(conn, job_id, service)
@@ -77,26 +103,10 @@ def _insert_job(conn, job_id, service):
         VALUES(?, ?, ?, datetime('now'), datetime('now'))
     """, (job_id, service, UNKNOWN_STATUS))
 #
-def get_jobs_by_id(conn, job_id):
-    conn.row_factory = dict_factory
-    return conn.execute("""
-        SELECT job_id, service, observed_state, unchanged_count, is_terminal
-        FROM job_state
-        WHERE job_id = ?
-    """, (job_id, )).fetchall()
-#
-def get_due_jobs(conn):
-    return conn.execute("""
-        SELECT job_id, service, observed_state, unchanged_count
-        FROM job_state
-        WHERE is_terminal = 0
-        AND next_poll_at <= ?
-    """, (timestamp_for_db(utcnow()),)).fetchall()
-#
 def update_jobs(conn, dressed_results):
-
     try:
-        conn.execute("BEGIN IMMEDIATE;")
+        conn.execute("BEGIN IMMEDIATE;") # Manual handling as I want multiple executes in single transaction in autocommit mode
+
         #
         for dressed_result in dressed_results:
             result = dressed_result['result']
@@ -140,7 +150,3 @@ def _update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is
         job_id,
         service
     ))
-
-
-
-

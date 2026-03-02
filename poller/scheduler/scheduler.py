@@ -3,7 +3,7 @@ import httpx
 
 from poller.scheduler.db_interface.services_interface import SERVICES
 from poller.scheduler.import_jobs import import_jobs
-from poller.scheduler.db_interface.db_interface import init_db, get_db
+from poller.scheduler.db_interface.scheduler_db_interface import init_db, get_db
 from poller.config import SCHEDULER_INTERVAL, RUN_ONCE, GLOBAL_CONCURRENCY
 import logging
 

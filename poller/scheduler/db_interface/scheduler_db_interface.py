@@ -19,8 +19,7 @@ from poller.config import SCHEDULER_DB
 class SQLITE_DB:
 
     def __enter__(self):
-        # TODO: cross-check this connection settings (should be able to handle concurrency)
-        conn = sqlite3.connect(SCHEDULER_DB, timeout=5, isolation_level=None) # CARE: isolation_level=None implies manual handling of transactions
+        conn = sqlite3.connect(SCHEDULER_DB, timeout=5, isolation_level=None) # CARE: isolation_level=None implies true autocommit --> manual handling of transactions when they involve multiple statement
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA synchronous=NORMAL;")
         conn.execute("PRAGMA busy_timeout=5000;")
