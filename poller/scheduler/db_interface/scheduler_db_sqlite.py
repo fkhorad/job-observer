@@ -12,7 +12,7 @@ def init_sqlite_db():
     if REPLACE_DBS:
         backup_file(SCHEDULER_DB)
 
-    # Create tables (AND db file)
+    # Create tables (AND db file if necessary)
     with sqlite3.connect(SCHEDULER_DB) as conn:
         
         # Special 'single-row' table, containing last checked job id
@@ -41,7 +41,9 @@ def init_sqlite_db():
         )
         """)
 
-# Queries
+##########
+# QUERIES
+##########
 
 # LAST SEQ (=last job imported from api_db)
 def get_last_seq(conn):
@@ -49,22 +51,32 @@ def get_last_seq(conn):
         "SELECT last_seq FROM controller_cursor WHERE id=1"
     ).fetchone()[0]
     return {'last_seq': last_seq}
-#
-def update_last_seq(conn, last_seq):
-    conn.execute(
-        "UPDATE controller_cursor SET last_seq=? WHERE id=1",
-        (last_seq,),
-    )
 
 
 # JOBS
-
-def insert_job(conn, job_id, service):
+def insert_jobs(conn, job_rows):
+    try:
+        conn.execute("BEGIN IMMEDIATE;")
+        #
+        for _, job_id, service in job_rows:
+            _insert_job(conn, job_id, service)
+        #
+        last_seq = max([r[0] for r in job_rows])
+        _update_last_seq(conn, last_seq)
+        conn.execute("COMMIT;")
+    except Exception:
+        conn.execute("ROLLBACK;")
+        raise # Reraises the SAME exception with the same traceback
+#
+def _update_last_seq(conn, last_seq):
+    conn.execute("UPDATE controller_cursor SET last_seq=? WHERE id=1", (last_seq,))
+#
+def _insert_job(conn, job_id, service):
     conn.execute("""
         INSERT OR IGNORE INTO job_state(job_id, service, observed_state, next_poll_at, updated_at)
         VALUES(?, ?, ?, datetime('now'), datetime('now'))
     """, (job_id, service, UNKNOWN_STATUS))
-
+#
 def get_jobs_by_id(conn, job_id):
     conn.row_factory = dict_factory
     return conn.execute("""
@@ -72,8 +84,7 @@ def get_jobs_by_id(conn, job_id):
         FROM job_state
         WHERE job_id = ?
     """, (job_id, )).fetchall()
-
-
+#
 def get_due_jobs(conn):
     return conn.execute("""
         SELECT job_id, service, observed_state, unchanged_count
@@ -81,8 +92,30 @@ def get_due_jobs(conn):
         WHERE is_terminal = 0
         AND next_poll_at <= ?
     """, (timestamp_for_db(utcnow()),)).fetchall()
+#
+def update_jobs(conn, dressed_results):
 
-def update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal):
+    try:
+        conn.execute("BEGIN IMMEDIATE;")
+        #
+        for dressed_result in dressed_results:
+            result = dressed_result['result']
+            job_id = result['job_id']
+            service = result['service']
+            new_state = result['new_state']
+            unchanged_count = result.get('unchanged_count', 0)
+            next_poll = result['next_poll']
+            is_terminal = result['is_terminal']
+            #
+            _update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal)
+        #
+        conn.execute("COMMIT;")
+    except Exception:
+        conn.execute("ROLLBACK;")
+        raise # Reraises the SAME exception with the same traceback
+#
+def _update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal):
+
     now = timestamp_for_db(utcnow())
     conn.execute("""
         UPDATE job_state

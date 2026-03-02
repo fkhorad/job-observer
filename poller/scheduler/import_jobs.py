@@ -11,10 +11,7 @@ def import_jobs():
         with get_api_db() as api_db:
             rows = api_db.get_new_jobs(new_jobs_parameters)
 
-        for _, job_id, service in rows:
-            sched_db.insert_job(job_id, service)
-
         if rows:
-            sched_db.update_new_jobs_parameters(rows)
+            sched_db.insert_jobs(rows)
 
         return sched_db.get_due_jobs()

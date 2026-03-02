@@ -64,11 +64,10 @@ async def reconciliation_cycle():
 
         # DB update
         with get_db() as db:
-            for dressed_result in dressed_results:
-                try:
-                    db.update_job(dressed_result['result'])
-                except Exception as err:
-                    logger.error(err)
+            try:
+                db.update_jobs(dressed_results)
+            except Exception as err:
+                logger.error(err)
 
 def init():
     # Could contain more init steps
