@@ -1,10 +1,11 @@
 import asyncio
 import httpx
+import time
 
 from poller.scheduler.db_interface.services_interface import SERVICES
 from poller.scheduler.import_jobs import import_jobs
 from poller.scheduler.db_interface.scheduler_db_interface import init_db, get_db
-from poller.config import SCHEDULER_INTERVAL, RUN_ONCE, GLOBAL_CONCURRENCY
+from poller.config import SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY
 import logging
 
 
@@ -19,7 +20,7 @@ logger = logging.getLogger("worker")
 # Heartbeat function
 async def reconciliation_cycle():
 
-    jobs = import_jobs()
+    jobs, jobs_queued = import_jobs()
 
     logger.info('JOBS: ' + str(jobs))
 
@@ -69,8 +70,10 @@ async def reconciliation_cycle():
             except Exception as err:
                 logger.error(err)
 
+        return jobs_queued
+
 def init():
-    # Could contain more init steps
+    # Could eventually be expanded to contain more init steps
     init_db()
 
 
@@ -79,7 +82,7 @@ async def start():
 
     init()
 
-    # For debugging
+    # For debugging only
     if RUN_ONCE:
         await reconciliation_cycle()
         return
@@ -87,8 +90,15 @@ async def start():
     # Main loop
     while True:
         logger.info("Scheduler Tick")
-        await reconciliation_cycle()
-        await asyncio.sleep(SCHEDULER_INTERVAL)
+        
+        start = time.monotonic()
+        jobs_queued = await reconciliation_cycle()
+        
+        if jobs_queued:
+            await asyncio.sleep(SCHEDULER_BUSY_SLEEP)
+        else:
+            elapsed = time.monotonic() - start
+            await asyncio.sleep(max(SCHEDULER_BUSY_SLEEP, SCHEDULER_IDLE_SLEEP - elapsed))
 
 
 if __name__ == "__main__":

@@ -35,7 +35,9 @@ class SQLITE_DB:
 
     def get_new_jobs(self, new_jobs_parameters, batch=DEF_BATCH):
         last_seq = new_jobs_parameters['last_seq']
-        return get_new_jobs(last_seq, batch)
+        new_jobs = get_new_jobs(last_seq, batch)
+        limit_hit = bool(new_jobs and len(new_jobs)>=batch)
+        return new_jobs, limit_hit
 
 
     # TODO: refactor, eventually (?)

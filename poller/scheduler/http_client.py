@@ -17,5 +17,7 @@ async def fetch_status(client, request_parameters):
     except httpx.HTTPStatusError as e:
         status_code = e.response.status_code
         return {'response_status': str(status_code), 'service_status': None}
-
+    except httpx.HTTPStatusError as e:
+        pass
+        # TODO: something
 

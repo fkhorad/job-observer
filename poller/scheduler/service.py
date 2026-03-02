@@ -43,7 +43,7 @@ class Service:
     # ============================================================
     # Public API used by reconciliation loop
     # ============================================================
-    async def poll(self, client, job):
+    async def poll(self, client, job): # TODO: consider 'reinforcing' timeout (it is perhaps too low-level now, doesn't include the wrapping)
         """
         Main polling entry point.
         Called by reconciliation loop.
