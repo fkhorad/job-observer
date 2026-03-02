@@ -30,8 +30,8 @@ class SQLITE_DB:
     def __exit__(self, exc_type, exc, tb):
         self.conn.close()
 
-    def insert_job(self, job_id, service):
-        insert_job(self.conn, job_id, service)
+    def insert_job(self, job_id, service, callback_url):
+        insert_job(self.conn, job_id, service, callback_url)
 
     def get_new_jobs(self, new_jobs_parameters, batch=DEF_BATCH):
         last_seq = new_jobs_parameters['last_seq']

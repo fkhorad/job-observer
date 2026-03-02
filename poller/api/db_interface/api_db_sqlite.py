@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 
 from poller.config import API_DB as DB, REPLACE_DBS, SCHEDULER_DB as SCHED_DB
-from poller.general_helpers import backup_file
+from poller.general_helpers import utcnow, backup_file, timestamp_for_db
 
 
 ##################
@@ -20,7 +20,8 @@ def init_sqlite_db():
             seq INTEGER PRIMARY KEY AUTOINCREMENT,
             job_id TEXT NOT NULL,
             service TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            callback_url TEXT,
+            created_at DATETIME
         )
         """)
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_job ON job_requests(job_id, service)")
@@ -66,7 +67,7 @@ def sequence_check():
 
 def get_new_jobs(conn, last_seq, batch):
     res = conn.execute("""
-        SELECT seq, job_id, service
+        SELECT seq, job_id, service, callback_url
         FROM job_requests
         WHERE seq > ?
         ORDER BY seq
@@ -75,7 +76,8 @@ def get_new_jobs(conn, last_seq, batch):
     return res
 
 # This is the only write operation for now
-def insert_job(conn, job_id, service):
-    conn.execute("INSERT OR IGNORE INTO job_requests(job_id, service) VALUES (?,?)", (job_id, service))
+def insert_job(conn, job_id, service, callback_url):
+    now = timestamp_for_db(utcnow())
+    conn.execute("INSERT OR IGNORE INTO job_requests(job_id, service, callback_url, created_at) VALUES (?, ?, ?, ?)", (job_id, service, callback_url, now))
 
 

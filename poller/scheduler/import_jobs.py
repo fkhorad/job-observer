@@ -8,9 +8,11 @@ def import_jobs():
         new_jobs_parameters = sched_db.get_new_jobs_parameters()
 
         with get_api_db() as api_db:
-            rows, limit_hit = api_db.get_new_jobs(new_jobs_parameters)
+            rows, api_limit_hit = api_db.get_new_jobs(new_jobs_parameters)
 
         if rows:
             sched_db.insert_jobs(rows)
 
-        return sched_db.get_due_jobs(), limit_hit
+        due_jobs, scheduler_limit_hit = sched_db.get_due_jobs()
+        
+        return due_jobs, (api_limit_hit or scheduler_limit_hit)

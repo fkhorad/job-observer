@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
+from typing import Optional
 
 from poller.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
 from poller.api.db_interface.api_db_interface import init_db, get_db as get_api_db
@@ -18,12 +19,13 @@ init_db()
 class PostJobRequest(BaseModel):
     job_id: str
     service: str
+    callback_url: Optional[HttpUrl] = None
 #
 @app.post("/add_job")
 def add_job(req: PostJobRequest):
 
     api_db = get_api_db()
-    api_db.insert_job(req.job_id, req.service)
+    api_db.insert_job(req.job_id, req.service, req.callback_url)
 
     return {'status': 'accepted'}
 

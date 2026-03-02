@@ -5,8 +5,6 @@ from poller.scheduler.db_interface.scheduler_db_interface import get_db
 from poller.config import GLOBAL_CONCURRENCY
 
 
-
-
 async def run_reconciliation_phase(
     *,
     fetch_items,          # sync function → list[Item]
@@ -30,7 +28,7 @@ async def run_reconciliation_phase(
     if not items:
         return
     
-    global_semaphore = asyncio.Semaphore(GLOBAL_CONCURRENCY)
+    global_semaphore = service_semaphores['#GLOBAL_SEMAPHORE#']
 
     async with httpx.AsyncClient() as client:
 
@@ -61,12 +59,12 @@ async def run_reconciliation_phase(
                 }
 
         tasks = [guarded(item) for item in items]
-        results = await asyncio.gather(*tasks)
+        dressed_results = await asyncio.gather(*tasks)
 
     # --- single writer phase ---
     with get_db() as db:
         try:
-            apply_results(db, results)
+            apply_results(db, dressed_results)
         except Exception as err:
             pass
             # OR LOG...
