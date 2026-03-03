@@ -33,7 +33,7 @@ def sequence_check():
     # Check last_seq value in SCHED_DB; if SCHED_DB does not exist yet, if last_seq there is not initialized, or if its value is 0, just silently return -- all these scenarios are possible and consistent
     try:
         db_path = Path(SCHED_DB).resolve() # Handles OS-dependent (Windows...) vagaries in path handling
-        with sqlite3.connect(f"file:{db_path.as_uri()}?mode=ro", uri=True) as sched_conn: # open in read-only ONLY IF SCHEDULER DB ALREADY EXISTS
+        with sqlite3.connect(f'{db_path.as_uri()}?mode=ro', uri=True) as sched_conn: # open in read-only ONLY IF SCHEDULER DB ALREADY EXISTS
             last_seq_check = sched_conn.execute("SELECT last_seq FROM controller_cursor WHERE id=1").fetchone()
             if not last_seq_check:
                 return
@@ -48,14 +48,14 @@ def sequence_check():
     with sqlite3.connect(DB) as conn:
 
         # Check local status
-        row = conn.execute("SELECT seq FROM sqlite_sequence WHERE name = job_requests").fetchone()
+        row = conn.execute("SELECT seq FROM sqlite_sequence WHERE name = 'job_requests'").fetchone()
         
         if row:
             seq_val = row[0]
 
             # If seq exists but scheduler value is higher, update seq to scheduler value; this should ensure that next inserted job is actually picked up
             if sched_last_seq > seq_val:
-                conn.execute("UPDATE sqlite_sequence SET seq = ? WHERE name = job_requests", (sched_last_seq, ))
+                conn.execute("UPDATE sqlite_sequence SET seq = ? WHERE name = 'job_requests'", (sched_last_seq, ))
         else:
             # If seq doesn't exist yet, initialize it to scheduler value 
             conn.execute("INSERT OR REPLACE INTO sqlite_sequence (name, seq) VALUES (?, ?)", ('job_requests', sched_last_seq))

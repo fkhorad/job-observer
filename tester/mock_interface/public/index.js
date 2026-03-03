@@ -1,27 +1,37 @@
 
 
-// ---- MOCK ENDPOINT URLs ----
-const FIRST_POST_ENDPOINT = "/api/first/job";
-const FIRST_SECOND_ENDPOINT = "/api/second/job";
 const POLLING_REGISTRATION_ENDPOINT = "/api/add_job";
 const POLL_ENDPOINT = "/api/job_status";
 //
 let pollingInterval = null;
-const runningJobs = [];
-const startBtn1 = document.getElementById("start-btn-1");
-// const startBtn2 = document.getElementById("startBtn-2");
+let runningJobs = [];
 const statusContainer = document.getElementById("status-container");
 const preStatusDiv = document.getElementById("status-placeholder");
 
+// ---- MOCK ENDPOINTS ----
+const FIRST_POST_ENDPOINT = "/api/first/job";
+const SECOND_POST_ENDPOINT = "/api/second/job";
+const endpoints = {
+    'mock': FIRST_POST_ENDPOINT,
+    'mock_clone': SECOND_POST_ENDPOINT
+};
+//
+const startBtn1 = document.getElementById("start-btn-1");
+const startBtn2 = document.getElementById("start-btn-2");
+
 
 startBtn1.addEventListener("click", startJob);
+startBtn2.addEventListener("click", startJob);
 
 
-async function startJob(){
+async function startJob(event){
+
+    const serviceName = event.target.getAttribute('data-val');
+    console.log('Event called service:', serviceName);
 
     try {
         // ---- POST REQUEST ----
-        const response = await fetch(FIRST_POST_ENDPOINT, {
+        const response = await fetch(endpoints[serviceName], {
             method: "POST",
             headers: {
             "Content-Type": "application/json"
@@ -32,11 +42,11 @@ async function startJob(){
         const data = await response.json();
 
         const jobId = data.job_id;
-        runningJobs.push(jobId);
+        runningJobs.push([jobId, serviceName]);
 
         const jobElement = document.createElement('div');
         jobElement.id = jobId;
-        jobElement.innerText = "Job started with jobID: " + jobId;
+        jobElement.innerText = `Job started in service ${serviceName} with jobID: ${jobId}`;
         preStatusDiv.after(jobElement);
 
         if(!pollingInterval) startPolling();
@@ -44,13 +54,13 @@ async function startJob(){
         // Register to polling service
         const requestBody = {
             job_id: jobId,
-            service: "mock"
+            service: serviceName
         };
         //
         await fetch(POLLING_REGISTRATION_ENDPOINT, {
             method: "POST",
             headers: {
-            "Content-Type": "application/json"
+                "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody)
         });
@@ -67,12 +77,14 @@ function startPolling() {
 
     pollingInterval = setInterval(async () => {
 
-        for(const jobId of runningJobs){
+        for(const job of runningJobs){
+            const jobId = job[0];
+            const serviceName = job[1]
             const jobDiv = document.getElementById(jobId);
 
             try {
                 // ---- STATUS REQUEST ----
-                const response = await fetch(`${POLL_ENDPOINT}?job_id=${jobId}`);
+                const response = await fetch(`${POLL_ENDPOINT}?job_id=${jobId}&service=${serviceName}`);
 
                 // ---- MOCK STATUS RESPONSE ----
                 const response_data = await response.json();
@@ -81,15 +93,14 @@ function startPolling() {
                 console.log('Check status data', data_list);
                 const data = data_list.length ? data_list[0] : {'observed_state': 'unknown'};
 
-                const newInnerText = `Job ${jobId} status: ${data.observed_state}`;
+                const newInnerText = `Job ${jobId} (${serviceName}) status: ${data.observed_state}`;
                 if(newInnerText!=jobDiv.innerText){
                     jobDiv.innerText = newInnerText;
                 }
 
                 if (data.is_terminal) {
                     jobDiv.innerText += " ✅ Done!";
-                    const index = runningJobs.indexOf(jobId);
-                    if(index !== -1) runningJobs.splice(index, 1);
+                    runningJobs = runningJobs.filter(el => (el[0]!==jobId || el[1]!==serviceName));
                 }
 
             } catch (error) {

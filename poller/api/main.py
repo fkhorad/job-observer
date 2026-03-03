@@ -24,25 +24,25 @@ class PostJobRequest(BaseModel):
 @app.post("/add_job")
 def add_job(req: PostJobRequest):
 
-    api_db = get_api_db()
-    api_db.insert_job(req.job_id, req.service, req.callback_url)
+    with get_api_db() as api_db:
+        api_db.insert_job(req.job_id, req.service, req.callback_url)
 
     return {'status': 'accepted'}
 
 
 # GET: /job_status --> get job(s) status and aux parameter by JOB_ID; in principle it can return more than one (due to absence of service ID) -- TODO: discuss!
 @app.get("/job_status")
-def get_job_status(job_id: str):
-    with get_scheduler_db() as sched_db:
-        jobs = sched_db.get_jobs_by_id(job_id)
+def get_job_status(job_id: str, service: str):
+    with get_scheduler_db(read_only=True) as sched_db:
+        jobs = sched_db.get_jobs_by_id(job_id, service)
         return {'jobs': jobs}
 
 
 # GET: /services --> returns service list (with all configuration parameters)
 @app.get("/services")
 def get_services():
-    api_db = get_api_db()
-    return api_db.get_services()
+    with get_api_db(no_connection=True) as api_db:
+        return api_db.get_services()
 
 
 # TODO: add POST to update service list

@@ -5,7 +5,7 @@ from poller.api.db_interface.api_db_interface import get_db as get_api_db
 
 
 def import_services():
-    with get_api_db() as api_db:
+    with get_api_db(no_connection=True) as api_db:
         services_raw = api_db.get_services()
 
     services = {}

@@ -1,9 +1,11 @@
 import asyncio
 import httpx
+import logging
 
 from poller.scheduler.db_interface.scheduler_db_interface import get_db
-from poller.config import GLOBAL_CONCURRENCY
 
+
+logger = logging.getLogger(__name__)
 
 async def run_reconciliation_phase(
     *,
@@ -21,9 +23,13 @@ async def run_reconciliation_phase(
     4. Single short DB write phase
     """
 
-    items, items_queued = fetch_items()
+    try:
+        items, items_queued = fetch_items()
+    except Exception:
+        logger.exception('Problem in fetching items')
+        items = []
 
-    # Logging?
+    logger.info('Items: ' + str(items))
 
     if not items:
         return
@@ -35,7 +41,7 @@ async def run_reconciliation_phase(
         async def guarded(item):
 
             # Skipping items to be done outside the cycle
-            local_semaphore = service_semaphores(item[1]) # item must always include a 'fake' service, which has a None semaphore
+            local_semaphore = service_semaphores[item[1]] # items must always include a 'fake' service, which has a None semaphore
 
             try:
                 async with global_semaphore:
@@ -65,9 +71,8 @@ async def run_reconciliation_phase(
     with get_db() as db:
         try:
             apply_results(db, dressed_results)
-        except Exception as err:
-            pass
-            # OR LOG...
+        except Exception:
+            logger.exception('Problem in updating DB')
 
     return items_queued
 

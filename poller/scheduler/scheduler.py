@@ -7,16 +7,10 @@ from poller.scheduler.db_interface.services_interface import SERVICES
 from poller.scheduler.import_jobs import import_jobs
 from poller.scheduler.db_interface.scheduler_db_interface import init_db, get_db
 from poller.config import SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY
-from poller.scheduler.tmp import run_reconciliation_phase
+from poller.scheduler.reconciliation import run_reconciliation_phase
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-)
-
-logger = logging.getLogger("worker")
-
+logger = logging.getLogger(__name__)
 
 # Heartbeat function
 async def reconciliation_cycle():
@@ -74,8 +68,16 @@ async def reconciliation_cycle():
         return jobs_queued
 
 def init():
-    # Could eventually be expanded to contain more init steps
+    config_logging()
     init_db()
+
+
+def config_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(message)s",
+    )
+
 
 
 # RUN
@@ -115,9 +117,9 @@ async def start():
 
 
 # "Workers"
-def poll_service(client, job):
+async def poll_service(client, job):
      service = SERVICES.get(job[1])
-     service.poll(client, job)
+     return await service.poll(client, job)
 
 def update_jobs(db, dressed_results):
     db.update_jobs(dressed_results)

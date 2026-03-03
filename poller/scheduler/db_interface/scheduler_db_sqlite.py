@@ -90,21 +90,21 @@ def get_last_seq(conn):
 # JOBS
 
 ## GET info
-def get_jobs_by_id(conn, job_id):
+def get_jobs_by_id(conn, job_id, service):
     conn.row_factory = dict_factory
     return conn.execute("""
         SELECT job_id, service, observed_state, unchanged_count, is_terminal
         FROM job_state
-        WHERE job_id = ?
-    """, (job_id, )).fetchall()
+        WHERE job_id = ? AND service = ?
+    """, (job_id, service)).fetchall()
 #
 def get_due_jobs(conn, batch):
     return conn.execute("""
-        SELECT job_id, service, observed_state, unchanged_count
+        SELECT job_id, service, observed_state, unchanged_count, callback_url
         FROM job_state
         WHERE is_terminal = 0
         AND next_poll_at <= ?
-        LIMIT = ?
+        LIMIT ?
     """, (timestamp_for_db(utcnow()), batch)).fetchall()
 #
 def fetch_pending_callbacks(conn, batch):

@@ -1,4 +1,3 @@
-import sqlite3
 
 from poller.scheduler.db_interface.scheduler_db_sqlite import init_sqlite_db, get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks
 from poller.config import DEF_BATCH
@@ -8,27 +7,41 @@ from poller.config import DEF_BATCH
 def init_db():
     init_sqlite_db()
 
-def get_db():
-    return SQLITE_DB()
+def get_db(**kwargs):
+    return SQLITE_DB(**kwargs)
 
 
 ##################
 # sqlite interface
 ##################
+import sqlite3
+from pathlib import Path
 from poller.config import SCHEDULER_DB
 
 class SQLITE_DB:
 
+    def __init__(self, *, read_only: bool = False):
+        self.read_only = read_only
+        self.conn = None
+
     def __enter__(self):
-        conn = sqlite3.connect(SCHEDULER_DB, timeout=5, isolation_level=None) # CARE: isolation_level=None implies true autocommit --> manual handling of transactions when they involve multiple statement
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA synchronous=NORMAL;")
+        
+        db_path = Path(SCHEDULER_DB).resolve()
+        # CARE: isolation_level=None implies true autocommit --> manual handling of transactions when they involve multiple statement
+        if self.read_only:
+            conn = sqlite3.connect(f'{db_path.as_uri()}?mode=ro', uri=True, timeout=5, isolation_level=None) 
+        else:
+            conn = sqlite3.connect(db_path, timeout=5, isolation_level=None) 
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+        #
         conn.execute("PRAGMA busy_timeout=5000;")
         self.conn = conn
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        self.conn.close()
+        if self.conn is not None:
+            self.conn.close()
 
     def get_new_jobs_parameters(self):
         return get_last_seq(self.conn)
@@ -49,5 +62,5 @@ class SQLITE_DB:
     def update_jobs(self, dressed_results):
         update_jobs(self.conn, dressed_results)
 
-    def get_jobs_by_id(self, job_id):
-        return get_jobs_by_id(self.conn, job_id)
+    def get_jobs_by_id(self, job_id, service):
+        return get_jobs_by_id(self.conn, job_id, service)

@@ -50,8 +50,8 @@ async def create_job(req: Request):
             req.app.state.cache[job_id] = {'status': PENDING, 'timestamp': timestamp}
             req.app.state.counter += 1
             return {'job_id': job_id}
-        except Exception as err:
-            logger.error(err)
+        except Exception:
+            logger.exception('')
             raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -59,12 +59,8 @@ async def create_job(req: Request):
 @app.post("/status/{job_id}")
 async def get_status(job_id: str, req: Request):
     async with req.app.state.lock:
-
         try:
-
-            job = req.app.state.cache.get(job_id)
-            if job is None:
-                raise HTTPException(status_code=404, detail="Job not found")
+            job = req.app.state.cache[job_id]
             status = job['status']
 
             elapsed = time.perf_counter() - job['timestamp']
@@ -79,10 +75,11 @@ async def get_status(job_id: str, req: Request):
             req.app.state.cache[job_id]['status'] = status
 
             return {"status": status}
-        except HTTPException as err:
-            raise HTTPException(status_code=404, detail="Job not found") # Ugly, but...
-        except Exception as err:
-            logger.error(err)
+        except KeyError:
+            logger.exception('')
+            raise HTTPException(status_code=404, detail="Job not found")
+        except Exception:
+            logger.exception('')
             raise HTTPException(status_code=500, detail="Internal server error")
 
 

@@ -48,7 +48,7 @@ class Service:
         Main polling entry point.
         Called by reconciliation loop.
         """
-        job_id, _, old_state, unchanged_count = job
+        job_id, _, old_state, unchanged_count, callback_url = job
 
         request_parameters = await self._build_request(client, job_id)
 
@@ -72,6 +72,7 @@ class Service:
             old_state=old_state,
             unchanged_count=unchanged_count,
             new_state=new_state,
+            callback_url=callback_url
         )
 
 
@@ -89,7 +90,7 @@ class Service:
     # State reconciliation logic (policy)
     # ============================================================
 
-    def _reconcile_state(self, job_id, old_state, unchanged_count, new_state):
+    def _reconcile_state(self, job_id, old_state, unchanged_count, new_state, callback_url):
         """
         Encapsulates job state transition policy.
         """
@@ -106,7 +107,7 @@ class Service:
             or (new_state == "NOT_FOUND" and unchanged_count >= 3)
         )
 
-        return {'job_id': job_id, 'service': self.name, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal}
+        return {'job_id': job_id, 'service': self.name, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal, 'callback_url': callback_url}
 
 
     # ============================================================
