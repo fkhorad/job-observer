@@ -6,6 +6,7 @@ from typing import Dict, Any, Set, Optional
 from poller.scheduler.http_client import fetch_status
 from poller.scheduler.poll_logic.compute_polls import compute_next_poll
 from poller.config import DEFAULT_SERVICE_TIMEOUT as DEF_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY as DEF_MAX_CONCURRENCY, DEFAULT_STATUS_FIELD as DEF_STATUS_FIELD
+from poller.scheduler.dtos.job import Job
 
 
 @dataclass
@@ -43,14 +44,14 @@ class Service:
     # ============================================================
     # Public API used by reconciliation loop
     # ============================================================
-    async def poll(self, client, job): # TODO: consider 'reinforcing' timeout (it is perhaps too low-level now, doesn't include the wrapping)
+    async def poll(self, client, job: Job): # TODO: consider 'reinforcing' timeout (it is perhaps too low-level now, doesn't include the wrapping)
         """
         Main polling entry point.
         Called by reconciliation loop.
         """
-        job_id, _, old_state, unchanged_count, callback_url = job
 
-        request_parameters = await self._build_request(client, job_id)
+        job_id = job.job_id
+        request_parameters = await self._build_request(client, job.job_id)
 
         status_response = await fetch_status(client, request_parameters)
 
@@ -69,10 +70,10 @@ class Service:
 
         return self._reconcile_state(
             job_id=job_id,
-            old_state=old_state,
-            unchanged_count=unchanged_count,
+            old_state=job.state,
+            unchanged_count=job.unchanged_count,
             new_state=new_state,
-            callback_url=callback_url
+            callback_url=job.callback_url
         )
 
 
@@ -100,14 +101,14 @@ class Service:
         else:
             unchanged_count += 1
 
-        next_poll = compute_next_poll(unchanged_count)
+        next_poll_at = compute_next_poll(unchanged_count)
 
         is_terminal = (
             new_state in self.terminal_states
             or (new_state == "NOT_FOUND" and unchanged_count >= 3)
         )
 
-        return {'job_id': job_id, 'service': self.name, 'new_state': new_state, 'unchanged_count': unchanged_count, 'next_poll': next_poll, 'is_terminal': is_terminal, 'callback_url': callback_url}
+        return Job(job_id=job_id, service=self.name, state=new_state, unchanged_count=unchanged_count, next_poll_at=next_poll_at, is_terminal=is_terminal, callback_url=callback_url)
 
 
     # ============================================================

@@ -9,6 +9,8 @@ def timestamp_for_filename(datetime_):
     return datetime_.strftime('%Y-%m-%d_T%H-%M-%S.%fZ')
 
 def timestamp_for_db(datetime_):
+    if datetime_ is None:
+        return None
     return datetime_.strftime('%Y-%m-%d_T%H:%M:%S.%fZ')
 
 

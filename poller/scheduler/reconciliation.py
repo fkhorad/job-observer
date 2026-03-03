@@ -41,7 +41,7 @@ async def run_reconciliation_phase(
         async def guarded(item):
 
             # Skipping items to be done outside the cycle
-            local_semaphore = service_semaphores[item[1]] # items must always include a 'fake' service, which has a None semaphore
+            local_semaphore = service_semaphores[item.service] # items should be namedtuples or classes including a service class member, which can be set to DUMMY_SERVICE (see db_interface.services_interface) to yield a None Semaphore
 
             try:
                 async with global_semaphore:
@@ -52,12 +52,12 @@ async def run_reconciliation_phase(
                         result = await worker_fn(client, item)
                 
                 return {
-                    "job": item,
+                    "item": item,
                     "status": "ok",
                     "result": result,
                 }
     
-            except Exception as e:
+            except Exception as e: #### MMMMMMM
                 return {
                     "item": item,
                     "status": "error",
@@ -75,35 +75,3 @@ async def run_reconciliation_phase(
             logger.exception('Problem in updating DB')
 
     return items_queued
-
-######################################
-
-
-async def callback_worker(client, callback):
-
-    response = await client.post(
-        callback.callback_url,
-        json=callback.payload,
-    )
-
-    if 200 <= response.status_code < 300:
-        return {
-            "id": callback.id,
-            "status": "delivered",
-        }
-
-    if response.status_code >= 500 or response.status_code == 429:
-        return {
-            "url": callback.url,
-            "status": "retry",
-            "error": f"HTTP {response.status_code}",
-        }
-
-    return {
-        "url": callback.url,
-        "status": "failed_permanent",
-        "error": f"HTTP {response.status_code}",
-    }
-
-
-## Need a 'callback' object. TRY to use URL as ID.

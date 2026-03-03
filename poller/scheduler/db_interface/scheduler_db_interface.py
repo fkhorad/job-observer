@@ -1,5 +1,5 @@
 
-from poller.scheduler.db_interface.scheduler_db_sqlite import init_sqlite_db, get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks
+from poller.scheduler.db_interface.scheduler_db_sqlite import init_sqlite_db, get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks
 from poller.config import DEF_BATCH
 
 
@@ -61,6 +61,9 @@ class SQLITE_DB:
 
     def update_jobs(self, dressed_results):
         update_jobs(self.conn, dressed_results)
+
+    def update_callbacks(self, dressed_results):
+        update_callbacks(self.conn, dressed_results)
 
     def get_jobs_by_id(self, job_id, service):
         return get_jobs_by_id(self.conn, job_id, service)

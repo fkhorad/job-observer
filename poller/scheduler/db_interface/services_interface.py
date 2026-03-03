@@ -4,12 +4,18 @@ from poller.config import DEFAULT_SERVICE_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURREN
 from poller.api.db_interface.api_db_interface import get_db as get_api_db
 
 
+GLOBAL_PSEUDOSERVICE = '#GLOBAL_PSEUDOSERVICE#'
+DUMMY_SERVICE = '#DUMMY#'
+RESERVED_NAMES = [GLOBAL_PSEUDOSERVICE, DUMMY_SERVICE]
+
 def import_services():
     with get_api_db(no_connection=True) as api_db:
         services_raw = api_db.get_services()
 
     services = {}
     for name, cfg in services_raw.items():
+        if name in RESERVED_NAMES: # These service names are not allowed and ignored in import
+            continue
         services[name] = Service(
             name=name,
             method=cfg["method"],

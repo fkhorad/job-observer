@@ -1,8 +1,10 @@
 import sqlite3
 
-from poller.config import SCHEDULER_DB, REPLACE_DBS
-from poller.config import UNKNOWN_STATUS
+from poller.config import SCHEDULER_DB, REPLACE_DBS, UNKNOWN_STATUS
 from poller.general_helpers import utcnow, backup_file, timestamp_for_db
+from poller.scheduler.dtos.job import Job
+from poller.scheduler.db_interface.services_interface import DUMMY_SERVICE
+from poller.scheduler.callback import Callback, PENDING
 
 
 ##################
@@ -45,29 +47,28 @@ def init_sqlite_db():
         """)
 
         # Callback outbox
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS callback_outbox (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS callback_outbox (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-                job_id TEXT NOT NULL,
-                callback_url TEXT NOT NULL,
-                job_terminal_state TEXT NOT NULL,
+            job_id TEXT NOT NULL,
+            callback_url TEXT NOT NULL,
+            job_terminal_state TEXT NOT NULL,
 
-                callback_state TEXT NOT NULL DEFAULT 'pending',
-                retry_count INTEGER NOT NULL DEFAULT 0,
-                max_retries INTEGER NOT NULL DEFAULT 5,
+            callback_state TEXT NOT NULL DEFAULT '{PENDING}',
+            retry_count INTEGER NOT NULL DEFAULT 0,
 
-                next_attempt_at DATETIME NOT NULL,
+            created_at DATETIME NOT NULL,
+            next_attempt_at DATETIME NOT NULL,
 
-                last_error TEXT,
-                delivered_at DATETIME,
-
-                created_at DATETIME NOT NULL
-            );
+            last_error TEXT,
+            delivered_at DATETIME,
+            service TEXT DEFAULT '{DUMMY_SERVICE}'
+        );
         """)
 
         conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_callback_pending
+        CREATE INDEX IF NOT EXISTS idx_callback_pending
             ON callback_outbox (callback_state, next_attempt_at);
         """)
 
@@ -78,6 +79,13 @@ def init_sqlite_db():
 # Helper
 def dict_factory(cursor, row):
     return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+
+def job_factory(cursor, row):
+    return Job._make(row)
+
+def callback_factory(cursor, row):
+    return Callback(**{col[0]: row[idx] for idx, col in enumerate(cursor.description)})
+
 
 # LAST SEQ (=last job imported from api_db)
 def get_last_seq(conn):
@@ -99,8 +107,9 @@ def get_jobs_by_id(conn, job_id, service):
     """, (job_id, service)).fetchall()
 #
 def get_due_jobs(conn, batch):
+    conn.row_factory = job_factory
     return conn.execute("""
-        SELECT job_id, service, observed_state, unchanged_count, callback_url
+        SELECT job_id, service, observed_state, unchanged_count, next_poll_at, is_terminal, callback_url
         FROM job_state
         WHERE is_terminal = 0
         AND next_poll_at <= ?
@@ -108,11 +117,11 @@ def get_due_jobs(conn, batch):
     """, (timestamp_for_db(utcnow()), batch)).fetchall()
 #
 def fetch_pending_callbacks(conn, batch):
-    return conn.execute("""
-        SELECT id, job_id, callback_url, terminal_status,
-               retry_count, max_retries
+    conn.row_factory = callback_factory
+    return conn.execute(f"""
+        SELECT id, job_id, callback_url, job_terminal_state, retry_count, next_attempt_at, created_at, callback_state, service, last_error, delivered_at
         FROM callback_outbox
-        WHERE status = 'pending'
+        WHERE callback_state = '{PENDING}'
         AND next_attempt_at <= CURRENT_TIMESTAMP
         ORDER BY created_at
         LIMIT ?
@@ -147,29 +156,22 @@ def _insert_job(conn, job_id, service, callback_url):
 def update_jobs(conn, dressed_results):
     try:
         conn.execute("BEGIN IMMEDIATE;") # Manual handling as I want multiple executes in single transaction in autocommit mode
-
         #
         for dressed_result in dressed_results:
-            result = dressed_result['result']
-            job_id = result['job_id']
-            service = result['service']
-            callback_url = result['callback_url']
-            new_state = result['new_state']
-            unchanged_count = result.get('unchanged_count', 0)
-            next_poll = result['next_poll']
-            is_terminal = result['is_terminal']
+            job = dressed_result.get('result')
+            if job is None:
+                continue
             #
-            _update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal)
-            if callback_url is not None and is_terminal:
-                _insert_callback(conn, job_id, callback_url, new_state)
+            _update_job(conn, job)
+            if job.callback_url is not None and job.is_terminal:
+                _insert_callback(conn, job.job_id, job.callback_url, job.new_state)
         #
         conn.execute("COMMIT;")
     except Exception:
         conn.execute("ROLLBACK;")
         raise # Reraises the SAME exception with the same traceback
 #
-def _update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is_terminal):
-
+def _update_job(conn, job):
     now = timestamp_for_db(utcnow())
     conn.execute("""
         UPDATE job_state
@@ -185,17 +187,17 @@ def _update_job(conn, job_id, service, new_state, unchanged_count, next_poll, is
             updated_at=?
         WHERE job_id=? AND service=?
     """, (
-        new_state,
-        unchanged_count,
-        timestamp_for_db(next_poll),
-        int(is_terminal),
+        job.state,
+        job.unchanged_count,
+        timestamp_for_db(job.next_poll_at),
+        int(job.is_terminal),
         now,
         now,
-        job_id,
-        service
+        job.job_id,
+        job.service
     ))
 
-def _insert_callback(conn, job_id, callback_url, terminal_state, max_retries=5): # Externalize + INCREASE the # of max retries
+def _insert_callback(conn, job_id, callback_url, terminal_state):
     now = timestamp_for_db(utcnow())
     conn.execute("""
         INSERT INTO callback_outbox (
@@ -211,36 +213,31 @@ def _insert_callback(conn, job_id, callback_url, terminal_state, max_retries=5):
         job_id,
         callback_url,
         terminal_state,
-        max_retries,
         now,
         now
     ))
-
-
-
-## YET TO INSERT (and review/modify)
-def mark_callback_delivered(conn, callback_id):
+#
+def update_callbacks(conn, dressed_results):
+    try:
+        conn.execute("BEGIN IMMEDIATE;") # Manual handling as I want multiple executes in single transaction in autocommit mode
+        #
+        for dressed_result in dressed_results:
+            callback = dressed_result.get('result')
+            if callback is None:
+                continue
+            #
+            _update_callback(conn, callback)
+        #
+        conn.execute("COMMIT;")
+    except Exception:
+        conn.execute("ROLLBACK;")
+        raise # Reraises the SAME exception with the same traceback
+#
+def _update_callback(conn, callback):
     conn.execute("""
-        UPDATE callback_outbox
-        SET status = 'delivered',
-            delivered_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """, (callback_id,))
+        UPDATE job_state
+        SET callback_state = ?, retry_count = ?, next_attempt_at = ?, last_error = ?, delivered_at = ?
+        """, (callback.callback_state, callback.retry_count, timestamp_for_db(callback.next_attempt_at)), callback.last_error, timestamp_for_db(callback.delivered_at))
 
-def mark_callback_failed(conn, callback_id, error_message, backoff_seconds=30):
-    conn.execute("""
-        UPDATE callback_outbox
-        SET
-            retry_count = retry_count + 1,
-            last_error = ?,
-            next_attempt_at = DATETIME(CURRENT_TIMESTAMP, ?),
-            status = CASE
-                WHEN retry_count + 1 >= max_retries THEN 'failed'
-                ELSE 'pending'
-            END
-        WHERE id = ?
-    """, (
-        error_message,
-        f'+{backoff_seconds} seconds',
-        callback_id,
-    ))
+
+

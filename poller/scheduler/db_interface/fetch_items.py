@@ -25,3 +25,8 @@ def import_jobs():
         due_jobs, scheduler_limit_hit = sched_db.get_due_jobs()
         
         return due_jobs, (api_limit_hit or scheduler_limit_hit)
+    
+
+def fetch_callbacks():
+    with get_db() as db:
+        return db.fetch_pending_callbacks()
