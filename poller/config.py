@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 
 
 # Paths
@@ -28,6 +29,7 @@ UNKNOWN_STATUS = 'unknown'
 RUN_ONCE = False
 GLOBAL_CONCURRENCY = 100
 CALLBACK_RETRIES = 15
+LOGGING_LEVEL = logging.DEBUG
 #
 MIN_BACKOFF = 2 # seconds
 MAX_BACKOFF = 60 # seconds

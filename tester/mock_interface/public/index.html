@@ -16,6 +16,23 @@
       cursor: pointer;
     }
 
+    #status-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* two equal columns */
+      gap: 16px;
+      align-items: start; /* prevents equal height stretching */
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #status-placeholder {
+      grid-column: 1 / -1;
+    }
+    
     #status-container div {
       margin-top: 20px;
       padding: 10px;
@@ -33,6 +50,8 @@
 
   <div id="status-container">
     <div id="status-placeholder">Idle</div>
+    <div id="polling-column" class="column"></div>
+    <div id="callback-column" class="column"></div>
   </div>
   <script type="module" src="index.js"></script>
 

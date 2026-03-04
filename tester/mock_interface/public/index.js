@@ -5,15 +5,16 @@ const POLL_ENDPOINT = "/api/job_status";
 //
 let pollingInterval = null;
 let runningJobs = [];
-const statusContainer = document.getElementById("status-container");
 const preStatusDiv = document.getElementById("status-placeholder");
+const pollingColumn = document.getElementById('polling-column');
+const callbackColumn = document.getElementById('callback-column');
 
 // ---- MOCK ENDPOINTS ----
 const FIRST_POST_ENDPOINT = "/api/first/job";
 const SECOND_POST_ENDPOINT = "/api/second/job";
-const endpoints = {
-    'mock': FIRST_POST_ENDPOINT,
-    'mock_clone': SECOND_POST_ENDPOINT
+const services = {
+    'mock': {'endpoint': FIRST_POST_ENDPOINT},
+    'mock_clone': {'endpoint': SECOND_POST_ENDPOINT, 'callback_url': 'http://localhost:3001/callback'}
 };
 //
 const startBtn1 = document.getElementById("start-btn-1");
@@ -24,6 +25,20 @@ startBtn1.addEventListener("click", startJob);
 startBtn2.addEventListener("click", startJob);
 
 
+const eventSource = new EventSource("/events"); // Establishes an SSE with the node.js server
+eventSource.addEventListener("callback", displayCallback);
+
+
+function displayCallback(event){
+    const data = JSON.parse(event.data);
+
+    console.log("Callback received:", data);
+
+//    statusDiv.innerText = "Received: " + JSON.stringify(data);
+//    statusDiv.style.color = "green";
+}
+
+
 async function startJob(event){
 
     const serviceName = event.target.getAttribute('data-val');
@@ -31,49 +46,65 @@ async function startJob(event){
 
     try {
         // ---- POST REQUEST ----
-        const response = await fetch(endpoints[serviceName], {
+        const response = await fetch(services[serviceName]['endpoint'], {
             method: "POST",
             headers: {
             "Content-Type": "application/json"
             },
             body: JSON.stringify({})
         });
-
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(`HTTP error in calling service: ${response.status} - ${message}`);
+        }
         const data = await response.json();
 
         const jobId = data.job_id;
         runningJobs.push([jobId, serviceName]);
 
-        const jobElement = document.createElement('div');
-        jobElement.id = jobId;
-        jobElement.innerText = `Job started in service ${serviceName} with jobID: ${jobId}`;
-        preStatusDiv.after(jobElement);
-
-        if(!pollingInterval) startPolling();
-
-        // Register to polling service
+        // Register to observer service
         const requestBody = {
             job_id: jobId,
             service: serviceName
         };
+        const callback_url = services[serviceName]['callback_url'];
+        if(callback_url) requestBody['callback_url'] = callback_url;
         //
-        await fetch(POLLING_REGISTRATION_ENDPOINT, {
+        const poller_response = await fetch(POLLING_REGISTRATION_ENDPOINT, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody)
         });
+        if (!poller_response.ok) {
+            const message = await poller_response.text();
+            throw new Error(`HTTP error in calling observer: ${poller_response.status} - ${message}`);
+        }
 
-    } catch (error) {
-        preStatusDiv.innerText = "Error starting job";
+        preStatusDiv.innerText = 'Checking job(s)';
+
+        // Add div
+        const jobElement = document.createElement('div');
+        jobElement.id = jobId;
+        //
+        if(callback_url){
+            jobElement.innerText = `Awaiting callback for service ${serviceName}, jobID: ${jobId}`;
+            callbackColumn.prepend(jobElement);
+        }
+        else{
+            jobElement.innerText = `Job polling - service: ${serviceName}, jobID: ${jobId}`;
+            pollingColumn.prepend(jobElement);
+            if(!pollingInterval) startPolling();
+        }
+
+    } catch(error) {
+        preStatusDiv.innerText = `Problem starting job - ${error}`;
         console.error(error);
     }
 }
 
 function startPolling() {
-
-    preStatusDiv.innerText = 'Checking job(s)';
 
     pollingInterval = setInterval(async () => {
 
@@ -100,7 +131,7 @@ function startPolling() {
 
                 if (data.is_terminal) {
                     jobDiv.innerText += " ✅ Done!";
-                    runningJobs = runningJobs.filter(el => (el[0]!==jobId || el[1]!==serviceName));
+                    deleteJob(jobId, serviceName);
                 }
 
             } catch (error) {
@@ -112,11 +143,17 @@ function startPolling() {
             }
         }
 
-        if(!runningJobs.length){
+    }, 4000); // every x milliseconds
+}
+
+
+function deleteJob(jobId, serviceName){
+    runningJobs = runningJobs.filter(el => (el[0]!==jobId || el[1]!==serviceName));
+    if(!runningJobs.length){
+        if(pollingInterval){
             clearInterval(pollingInterval);
             pollingInterval = null;
-            preStatusDiv.innerText = 'Idle';
         }
-
-    }, 4000); // every x milliseconds
+        preStatusDiv.innerText = 'Idle';
+    }
 }

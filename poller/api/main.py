@@ -25,7 +25,7 @@ class PostJobRequest(BaseModel):
 def add_job(req: PostJobRequest):
 
     with get_api_db() as api_db:
-        api_db.insert_job(req.job_id, req.service, req.callback_url)
+        api_db.insert_job(req.job_id, req.service, str(req.callback_url))
 
     return {'status': 'accepted'}
 

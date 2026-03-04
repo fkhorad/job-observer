@@ -5,7 +5,7 @@ import logging
 from poller.scheduler.db_interface.services_interface import SERVICES, GLOBAL_PSEUDOSERVICE, DUMMY_SERVICE
 from poller.scheduler.db_interface.fetch_items import import_jobs, fetch_callbacks
 from poller.scheduler.db_interface.scheduler_db_interface import init_db
-from poller.config import SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY
+from poller.config import SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, LOGGING_LEVEL
 from poller.scheduler.reconciliation import run_reconciliation_phase
 
 
@@ -19,7 +19,7 @@ def init():
 
 def config_logging():
     logging.basicConfig(
-        level=logging.INFO,
+        level=LOGGING_LEVEL,
         format="%(asctime)s | %(levelname)s | %(message)s",
     )
 

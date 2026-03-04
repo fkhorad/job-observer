@@ -3,13 +3,71 @@ import fetch from "node-fetch";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// Create app
 const app = express();
 app.use(express.json());
 
+
+/**
+ * Serve static website
+ */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, "public")));
 
+
+
+/**
+ * SSE Setup
+ */
+// Store connected SSE clients
+let clients = [];
+// Endpoint
+app.get("/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  // Flush headers immediately
+  res.flushHeaders?.();
+
+  const clientId = Date.now();
+  const newClient = { id: clientId, res };
+
+  clients.push(newClient);
+  console.log(`SSE client connected: ${clientId}`);
+
+  // Optional: send initial message
+  res.write(`data: ${JSON.stringify({ status: "connected" })}\n\n`);
+
+  // Remove client on disconnect
+  req.on("close", () => {
+    console.log(`SSE client disconnected: ${clientId}`);
+    clients = clients.filter(client => client.id !== clientId);
+  });
+});
+
+app.post("/callback", (req, res) => {
+  const payload = req.body;
+
+  console.log("Received callback:", payload);
+
+  const data = JSON.stringify(payload);
+
+  // Broadcast to all SSE clients
+  clients.forEach(client => {
+    client.res.write(`event: callback\n`); // Custom event type (optional definition)
+    client.res.write(`data: ${data}\n\n`);
+  });
+
+  res.json({ status: "ok", deliveredTo: clients.length });
+});
+
+
+/**
+ * Calling external services
+ */
 const SERVICES = {
   "/api/first/job": "http://localhost:8001/job",
   "/api/second/job": "http://localhost:8002/job",
@@ -56,4 +114,8 @@ app.use("/api", async (req, res) => {
   }
 });
 
+
+/**
+ * Server startup
+ */
 app.listen(3001, () => console.log("Proxy running on 3001"));
