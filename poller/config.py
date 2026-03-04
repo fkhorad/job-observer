@@ -11,11 +11,11 @@ Path(DATA_FOLDER).mkdir(exist_ok=True)
 
 
 # DBs
-REPLACE_DBS = True
+REPLACE_DBS = False
 
 # sqlite API DB parameters
 API_DB = f'{DATA_FOLDER}job_requests.db'
-JSON_SERVICES = f'{DATA_FOLDER}services.json'
+JSON_SERVICES = f'{DATA_FOLDER}services/services.json'
 
 # sqlite scheduler DB parameters
 SCHEDULER_DB = f'{DATA_FOLDER}scheduler.db'
@@ -39,6 +39,8 @@ MAX_BACKOFF = 60 # seconds
 DEFAULT_STATUS_FIELD = 'status'
 DEFAULT_SERVICE_MAX_CONCURRENCY = 10
 DEFAULT_SERVICE_TIMEOUT = 2
+GLOBAL_PSEUDOSERVICE = '#GLOBAL_PSEUDOSERVICE#'
+DUMMY_SERVICE = '#DUMMY#'
 
 
 

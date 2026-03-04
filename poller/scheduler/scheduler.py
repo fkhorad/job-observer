@@ -2,10 +2,10 @@ import asyncio
 import time
 import logging
 
-from poller.scheduler.db_interface.services_interface import SERVICES, GLOBAL_PSEUDOSERVICE, DUMMY_SERVICE
+from poller.scheduler.db_interface.services_interface import SERVICES
 from poller.scheduler.db_interface.fetch_items import import_jobs, fetch_callbacks
-from poller.scheduler.db_interface.scheduler_db_interface import init_db
-from poller.config import SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, LOGGING_LEVEL
+from poller.scheduler.db_interface.scheduler_db_interface import check_db
+from poller.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, LOGGING_LEVEL
 from poller.scheduler.reconciliation import run_reconciliation_phase
 
 
@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 def init():
     config_logging()
-    init_db()
+    try:
+        check_db()
+    except:
+        logger.exception('Crushed on init')
+        raise
 
 
 def config_logging():
@@ -67,7 +71,7 @@ def update_jobs(db, dressed_results):
 
 
 async def do_callback(client, callback):
-    callback.do_callback(client)
+    return await callback.do_callback(client)
 
 def update_callbacks(db, dressed_results):
     db.update_callbacks(dressed_results)

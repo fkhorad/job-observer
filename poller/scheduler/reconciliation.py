@@ -3,6 +3,7 @@ import httpx
 import logging
 
 from poller.scheduler.db_interface.scheduler_db_interface import get_db
+from poller.config import GLOBAL_PSEUDOSERVICE
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ async def run_reconciliation_phase(
     if not items:
         return
     
-    global_semaphore = service_semaphores['#GLOBAL_SEMAPHORE#']
+    global_semaphore = service_semaphores[GLOBAL_PSEUDOSERVICE]
 
     async with httpx.AsyncClient() as client:
 

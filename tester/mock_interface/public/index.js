@@ -4,7 +4,7 @@ const POLLING_REGISTRATION_ENDPOINT = "/api/add_job";
 const POLL_ENDPOINT = "/api/job_status";
 //
 let pollingInterval = null;
-let runningJobs = [];
+let pollingJobs = [];
 const preStatusDiv = document.getElementById("status-placeholder");
 const pollingColumn = document.getElementById('polling-column');
 const callbackColumn = document.getElementById('callback-column');
@@ -34,8 +34,15 @@ function displayCallback(event){
 
     console.log("Callback received:", data);
 
-//    statusDiv.innerText = "Received: " + JSON.stringify(data);
-//    statusDiv.style.color = "green";
+    const jobId = data.job_id;
+    const jobDiv = document.getElementById(jobId);
+    if(!jobDiv){
+        preStatusDiv.innerText = `Received callback for unknown job, ID: ${jobId}`
+    }
+    else{
+        jobDiv.innerText = `Callback for job ${jobId} received!`
+        jobDiv.style.color = "green";
+    }
 }
 
 
@@ -60,9 +67,8 @@ async function startJob(event){
         const data = await response.json();
 
         const jobId = data.job_id;
-        runningJobs.push([jobId, serviceName]);
 
-        // Register to observer service
+        // Register with observer service
         const requestBody = {
             job_id: jobId,
             service: serviceName
@@ -89,12 +95,13 @@ async function startJob(event){
         jobElement.id = jobId;
         //
         if(callback_url){
-            jobElement.innerText = `Awaiting callback for service ${serviceName}, jobID: ${jobId}`;
+            jobElement.innerText = `Awaiting callback for service ${serviceName}, jobId: ${jobId}`;
             callbackColumn.prepend(jobElement);
         }
         else{
-            jobElement.innerText = `Job polling - service: ${serviceName}, jobID: ${jobId}`;
+            jobElement.innerText = `Job polling - service: ${serviceName}, jobId: ${jobId}`;
             pollingColumn.prepend(jobElement);
+            pollingJobs.push([jobId, serviceName]);
             if(!pollingInterval) startPolling();
         }
 
@@ -108,7 +115,7 @@ function startPolling() {
 
     pollingInterval = setInterval(async () => {
 
-        for(const job of runningJobs){
+        for(const job of pollingJobs){
             const jobId = job[0];
             const serviceName = job[1]
             const jobDiv = document.getElementById(jobId);
@@ -148,8 +155,8 @@ function startPolling() {
 
 
 function deleteJob(jobId, serviceName){
-    runningJobs = runningJobs.filter(el => (el[0]!==jobId || el[1]!==serviceName));
-    if(!runningJobs.length){
+    pollingJobs = pollingJobs.filter(el => (el[0]!==jobId || el[1]!==serviceName));
+    if(!pollingJobs.length){
         if(pollingInterval){
             clearInterval(pollingInterval);
             pollingInterval = null;

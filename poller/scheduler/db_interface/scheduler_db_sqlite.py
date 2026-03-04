@@ -3,8 +3,8 @@ import sqlite3
 from poller.config import SCHEDULER_DB, REPLACE_DBS, UNKNOWN_STATUS
 from poller.general_helpers import utcnow, backup_file, timestamp_for_db
 from poller.scheduler.dtos.job import Job
-from poller.scheduler.db_interface.services_interface import DUMMY_SERVICE
-from poller.scheduler.callback import Callback, PENDING
+from poller.config import DUMMY_SERVICE
+from poller.scheduler.poll_logic.callback import Callback, PENDING
 
 
 ##################
@@ -59,7 +59,7 @@ def init_sqlite_db():
             retry_count INTEGER NOT NULL DEFAULT 0,
 
             created_at DATETIME NOT NULL,
-            next_attempt_at DATETIME NOT NULL,
+            next_attempt_at DATETIME,
 
             last_error TEXT,
             delivered_at DATETIME,
@@ -122,10 +122,10 @@ def fetch_pending_callbacks(conn, batch):
         SELECT id, job_id, callback_url, job_terminal_state, retry_count, next_attempt_at, created_at, callback_state, service, last_error, delivered_at
         FROM callback_outbox
         WHERE callback_state = '{PENDING}'
-        AND next_attempt_at <= CURRENT_TIMESTAMP
+        AND next_attempt_at <= ?
         ORDER BY created_at
         LIMIT ?
-    """, (batch,)).fetchall()
+    """, (timestamp_for_db(utcnow()), batch)).fetchall()
 
 
 ## Insert/Update
@@ -164,7 +164,7 @@ def update_jobs(conn, dressed_results):
             #
             _update_job(conn, job)
             if job.callback_url is not None and job.is_terminal:
-                _insert_callback(conn, job.job_id, job.callback_url, job.new_state)
+                _insert_callback(conn, job.job_id, job.callback_url, job.state)
         #
         conn.execute("COMMIT;")
     except Exception:
@@ -197,22 +197,21 @@ def _update_job(conn, job):
         job.service
     ))
 
-def _insert_callback(conn, job_id, callback_url, terminal_state):
+def _insert_callback(conn, job_id, callback_url, job_terminal_state):
     now = timestamp_for_db(utcnow())
     conn.execute("""
         INSERT INTO callback_outbox (
             job_id,
             callback_url,
-            terminal_state,
-            max_retries,
+            job_terminal_state,
             created_at,
             next_attempt_at
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
     """, (
         job_id,
         callback_url,
-        terminal_state,
+        job_terminal_state,
         now,
         now
     ))
@@ -235,9 +234,9 @@ def update_callbacks(conn, dressed_results):
 #
 def _update_callback(conn, callback):
     conn.execute("""
-        UPDATE job_state
-        SET callback_state = ?, retry_count = ?, next_attempt_at = ?, last_error = ?, delivered_at = ?
-        """, (callback.callback_state, callback.retry_count, timestamp_for_db(callback.next_attempt_at)), callback.last_error, timestamp_for_db(callback.delivered_at))
+        UPDATE callback_outbox
+        SET callback_state = ?, retry_count = ?, next_attempt_at = ?, last_error = ?, delivered_at = ? WHERE id = ?
+        """, (callback.callback_state, callback.retry_count, timestamp_for_db(callback.next_attempt_at), callback.last_error, timestamp_for_db(callback.delivered_at), callback.id))
 
 
 

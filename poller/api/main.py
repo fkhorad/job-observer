@@ -25,7 +25,8 @@ class PostJobRequest(BaseModel):
 def add_job(req: PostJobRequest):
 
     with get_api_db() as api_db:
-        api_db.insert_job(req.job_id, req.service, str(req.callback_url))
+        callback_url = str(req.callback_url) if req.callback_url is not None else None
+        api_db.insert_job(req.job_id, req.service, callback_url)
 
     return {'status': 'accepted'}
 
@@ -42,7 +43,7 @@ def get_job_status(job_id: str, service: str):
 @app.get("/services")
 def get_services():
     with get_api_db(no_connection=True) as api_db:
-        return api_db.get_services()
+        return api_db.get_services_filtered()
 
 
 # TODO: add POST to update service list

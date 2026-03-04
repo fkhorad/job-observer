@@ -1,12 +1,14 @@
 
-from poller.api.db_interface.api_db_sqlite import init_sqlite_db, insert_job, get_new_jobs
-from poller.api.db_interface.service_db_fake import get_services
+from poller.api.db_interface.api_db_sqlite import init_sqlite_db as init_api_db, insert_job, get_new_jobs
+from poller.scheduler.db_interface.scheduler_db_interface import init_db as init_scheduler_db
+from poller.api.db_interface.service_db_fake import get_services, get_services_filtered
 from poller.config import DEF_BATCH
 
 
 # Change here (+ config) only if not sqlite
 def init_db():
-    init_sqlite_db()
+    init_scheduler_db() # Initialized here, not there!
+    init_api_db()
 
 def get_db(**kwargs):
     return SQLITE_DB(**kwargs)
@@ -36,7 +38,7 @@ class SQLITE_DB:
         if self.read_only:
             conn = sqlite3.connect(f'{db_path.as_uri()}?mode=ro', uri=True, timeout=5, isolation_level=None) 
         else:
-            conn = sqlite3.connect(db_path, timeout=5, isolation_level=None) 
+            conn = sqlite3.connect(f'{db_path.as_uri()}?mode=rw', uri=True, timeout=5, isolation_level=None) 
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA synchronous=NORMAL;")
         #
@@ -58,6 +60,8 @@ class SQLITE_DB:
         return new_jobs, limit_hit
 
 
-    # TODO: refactor, eventually (?)
     def get_services(self):
         return get_services()
+    
+    def get_services_filtered(self):
+        return get_services_filtered()

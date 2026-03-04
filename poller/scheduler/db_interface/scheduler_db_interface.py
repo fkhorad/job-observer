@@ -4,6 +4,13 @@ from poller.config import DEF_BATCH
 
 
 # Change here (+ config) only if not sqlite
+def check_db():
+    try:
+        with get_db() as db_check: # Meant to CRUSH if DB not initialized (via API)
+            pass
+    except sqlite3.OperationalError:
+        raise Exception('DB not initialized')
+
 def init_db():
     init_sqlite_db()
 
@@ -31,7 +38,7 @@ class SQLITE_DB:
         if self.read_only:
             conn = sqlite3.connect(f'{db_path.as_uri()}?mode=ro', uri=True, timeout=5, isolation_level=None) 
         else:
-            conn = sqlite3.connect(db_path, timeout=5, isolation_level=None) 
+            conn = sqlite3.connect(f'{db_path.as_uri()}?mode=rw', uri=True, timeout=5, isolation_level=None) 
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA synchronous=NORMAL;")
         #

@@ -7,6 +7,7 @@ from poller.scheduler.http_client import fetch_status
 from poller.scheduler.poll_logic.compute_polls import compute_next_poll
 from poller.config import DEFAULT_SERVICE_TIMEOUT as DEF_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY as DEF_MAX_CONCURRENCY, DEFAULT_STATUS_FIELD as DEF_STATUS_FIELD
 from poller.scheduler.dtos.job import Job
+from poller.scheduler.dtos.request_parameters import RequestParameters
 
 
 @dataclass
@@ -24,6 +25,7 @@ class Service:
     status_field: str = DEF_STATUS_FIELD
     terminal_states: Set[str] = field(default_factory=set)
     max_concurrency: int = DEF_MAX_CONCURRENCY
+    description: Optional[str] = None
 
 
     # ------------------------------
@@ -56,7 +58,7 @@ class Service:
         status_response = await fetch_status(client, request_parameters)
 
         if not status_response:
-            return None
+            return None # In case of None response, no update is performed
 
         if status_response["response_status"] == "OK":
             new_state = status_response["service_status"]
@@ -76,7 +78,6 @@ class Service:
             callback_url=job.callback_url
         )
 
-
     async def _build_request(self, client, job_id):
         await self._ensure_token(client)
 
@@ -85,7 +86,8 @@ class Service:
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"
 
-        return { 'method': self.method, 'url': render(self.url, job_id), 'query_params': render(self.query_params, job_id), 'body': render(self.body, job_id) if self.method != "GET" else None, 'timeout': self.timeout, 'status_field': self.status_field, 'headers': headers }
+        return RequestParameters( method=self.method, url=render(self.url, job_id), query_params=render(self.query_params, job_id), body=render(self.body, job_id) if self.method != "GET" else None, timeout=self.timeout, status_field=self.status_field, headers=headers )
+
 
     # ============================================================
     # State reconciliation logic (policy)
@@ -140,9 +142,9 @@ class Service:
     async def _fetch_token(self, client):
         """
         Fetches a new token based on auth_type.
-        Minimal example: client_credentials.
+        Minimal example: client_credentials_basic.
         """
-        if self.auth_type == "client_credentials":
+        if self.auth_type == "client_credentials_basic":
             token_url = self.auth_config["token_url"]
             client_id = self.auth_config["client_id"]
             client_secret = self.auth_config["client_secret"]
@@ -161,6 +163,27 @@ class Service:
             payload = response.json()
 
             return payload["access_token"], payload.get("expires_in", 3600)
+
+        elif self.auth_type == "client_credentials_headers":
+            token_url = self.auth_config["token_url"]
+
+            response = await client.post(
+                token_url,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": f"Basic {self.auth_config['client_credentials']}"
+                },
+                data={
+                    "grant_type": "client_credentials"
+                },
+                timeout=self.timeout
+            )
+
+            response.raise_for_status()
+            payload = response.json()
+
+            return payload["access_token"], payload["expires_in"]
+
 
         raise RuntimeError(f"Unsupported auth_type: {self.auth_type}")
     
