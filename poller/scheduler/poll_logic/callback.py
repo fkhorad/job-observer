@@ -15,6 +15,7 @@ class Callback:
     job_id: str
     callback_url: str
     job_terminal_state: str
+    job_service: str
     callback_state: str
     retry_count: int
     created_at: datetime
@@ -26,7 +27,7 @@ class Callback:
 
     async def do_callback(self, client):
 
-        payload = {'job_id': self.job_id, 'status': self.job_terminal_state, 'end_confirmed_at': self.created_at}
+        payload = {'job_id': self.job_id, 'service': self.job_service, 'status': self.job_terminal_state, 'end_confirmed_at': self.created_at}
 
         response = await client.post(self.callback_url, json=payload)
 

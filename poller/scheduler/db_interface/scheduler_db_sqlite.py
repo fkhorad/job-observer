@@ -54,6 +54,7 @@ def init_sqlite_db():
             job_id TEXT NOT NULL,
             callback_url TEXT NOT NULL,
             job_terminal_state TEXT NOT NULL,
+            job_service TEXT NOT NULL,
 
             callback_state TEXT NOT NULL DEFAULT '{PENDING}',
             retry_count INTEGER NOT NULL DEFAULT 0,
@@ -119,7 +120,7 @@ def get_due_jobs(conn, batch):
 def fetch_pending_callbacks(conn, batch):
     conn.row_factory = callback_factory
     return conn.execute(f"""
-        SELECT id, job_id, callback_url, job_terminal_state, retry_count, next_attempt_at, created_at, callback_state, service, last_error, delivered_at
+        SELECT id, job_id, callback_url, job_terminal_state, job_service, retry_count, next_attempt_at, created_at, callback_state, service, last_error, delivered_at
         FROM callback_outbox
         WHERE callback_state = '{PENDING}'
         AND next_attempt_at <= ?
@@ -164,7 +165,7 @@ def update_jobs(conn, dressed_results):
             #
             _update_job(conn, job)
             if job.callback_url is not None and job.is_terminal:
-                _insert_callback(conn, job.job_id, job.callback_url, job.state)
+                _insert_callback(conn, job.job_id, job.callback_url, job.state, job.service)
         #
         conn.execute("COMMIT;")
     except Exception:
@@ -197,21 +198,23 @@ def _update_job(conn, job):
         job.service
     ))
 
-def _insert_callback(conn, job_id, callback_url, job_terminal_state):
+def _insert_callback(conn, job_id, callback_url, job_terminal_state, job_service):
     now = timestamp_for_db(utcnow())
     conn.execute("""
         INSERT INTO callback_outbox (
             job_id,
             callback_url,
             job_terminal_state,
+            job_service,
             created_at,
             next_attempt_at
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
     """, (
         job_id,
         callback_url,
         job_terminal_state,
+        job_service,
         now,
         now
     ))

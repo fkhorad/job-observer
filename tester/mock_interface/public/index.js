@@ -1,5 +1,4 @@
 
-
 const POLLING_REGISTRATION_ENDPOINT = "/api/add_job";
 const POLL_ENDPOINT = "/api/job_status";
 //
@@ -8,6 +7,8 @@ let pollingJobs = [];
 const preStatusDiv = document.getElementById("status-placeholder");
 const pollingColumn = document.getElementById('polling-column');
 const callbackColumn = document.getElementById('callback-column');
+
+const pipelineTerminators = [];
 
 // ---- MOCK ENDPOINTS ----
 const FIRST_POST_ENDPOINT = "/api/first/job";
@@ -19,7 +20,6 @@ const services = {
 //
 const startBtn1 = document.getElementById("start-btn-1");
 const startBtn2 = document.getElementById("start-btn-2");
-
 
 startBtn1.addEventListener("click", startJob);
 startBtn2.addEventListener("click", startJob);
@@ -35,13 +35,23 @@ function displayCallback(event){
     console.log("Callback received:", data);
 
     const jobId = data.job_id;
-    const jobDiv = document.getElementById(jobId);
-    if(!jobDiv){
-        preStatusDiv.innerText = `Received callback for unknown job, ID: ${jobId}`
+    const service = data.service;
+    const key = [jobId, service].toString();
+    if(pipelineTerminators[key]){
+        const pipeline = pipelineTerminators[key];
+        // Do something here
+    }
+    else if(service=='mock_clone'){
+        const jobDiv = document.getElementById(jobId);
+        if(!jobDiv){
+        }
+        else{
+            jobDiv.innerText = `Callback for job ${jobId} received!`
+            jobDiv.style.color = "green";
+        }
     }
     else{
-        jobDiv.innerText = `Callback for job ${jobId} received!`
-        jobDiv.style.color = "green";
+        preStatusDiv.innerText = `Received callback for unknown job, ID: ${jobId}`
     }
 }
 
