@@ -1,3 +1,5 @@
+import { services } from './paplaines.js';
+
 
 const POLLING_REGISTRATION_ENDPOINT = "/api/add_job";
 const POLL_ENDPOINT = "/api/job_status";
@@ -10,13 +12,6 @@ const callbackColumn = document.getElementById('callback-column');
 
 const pipelineTerminators = [];
 
-// ---- MOCK ENDPOINTS ----
-const FIRST_POST_ENDPOINT = "/api/first/job";
-const SECOND_POST_ENDPOINT = "/api/second/job";
-const services = {
-    'mock': {'endpoint': FIRST_POST_ENDPOINT},
-    'mock_clone': {'endpoint': SECOND_POST_ENDPOINT, 'callback_url': 'http://localhost:3001/callback'}
-};
 //
 const startBtn1 = document.getElementById("start-btn-1");
 const startBtn2 = document.getElementById("start-btn-2");

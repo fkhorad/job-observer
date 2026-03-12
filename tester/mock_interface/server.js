@@ -46,6 +46,14 @@ app.get("/events", (req, res) => {
     console.log(`SSE client disconnected: ${clientId}`);
     clients = clients.filter(client => client.id !== clientId);
   });
+
+  // Optional: heartbeat to prevent proxy timeout
+  setInterval(() => {
+  clients.forEach(client => {
+    client.res.write(":\n\n"); // comment heartbeat
+  });
+  }, 15000);
+
 });
 
 app.post("/callback", (req, res) => {
