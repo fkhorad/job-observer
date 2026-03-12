@@ -1,10 +1,14 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 import sqlite3
 
-from poller.config import SCHEDULER_DB, REPLACE_DBS, UNKNOWN_STATUS
-from poller.general_helpers import utcnow, backup_file, timestamp_for_db
-from poller.scheduler.dtos.job import Job
-from poller.config import DUMMY_SERVICE
-from poller.scheduler.poll_logic.callback import Callback, PENDING
+from observer.config import SCHEDULER_DB, REPLACE_DBS, UNKNOWN_STATUS
+from observer.general_helpers import utcnow, backup_file, timestamp_for_db
+from observer.scheduler.dtos.job import Job
+from observer.config import DUMMY_SERVICE
+from observer.scheduler.poll_logic.callback import Callback, PENDING
 
 
 ##################

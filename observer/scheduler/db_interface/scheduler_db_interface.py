@@ -1,6 +1,9 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
 
-from poller.scheduler.db_interface.scheduler_db_sqlite import init_sqlite_db, get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks
-from poller.config import DEF_BATCH
+from observer.scheduler.db_interface.scheduler_db_sqlite import init_sqlite_db, get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks
+from observer.config import DEF_BATCH
 
 
 # Change here (+ config) only if not sqlite
@@ -23,7 +26,7 @@ def get_db(**kwargs):
 ##################
 import sqlite3
 from pathlib import Path
-from poller.config import SCHEDULER_DB
+from observer.config import SCHEDULER_DB
 
 class SQLITE_DB:
 

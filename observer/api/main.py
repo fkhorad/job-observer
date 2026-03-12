@@ -1,16 +1,19 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
 
-from poller.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
-from poller.api.db_interface.api_db_interface import init_db, get_db as get_api_db
+from observer.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
+from observer.api.db_interface.api_db_interface import init_db, get_db as get_api_db
 
 
 # INIT API
 app = FastAPI()
 #
 init_db()
-
 
 
 # Endpoints
@@ -45,5 +48,3 @@ def get_services():
     with get_api_db(no_connection=True) as api_db:
         return api_db.get_services_filtered()
 
-
-# TODO: add POST to update service list

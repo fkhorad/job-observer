@@ -1,13 +1,17 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 import asyncio
 import time
 from dataclasses import dataclass, field
 from typing import Dict, Any, Set, Optional
 
-from poller.scheduler.http_client import fetch_status
-from poller.scheduler.poll_logic.compute_polls import compute_next_poll
-from poller.config import DEFAULT_SERVICE_TIMEOUT as DEF_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY as DEF_MAX_CONCURRENCY, DEFAULT_STATUS_FIELD as DEF_STATUS_FIELD
-from poller.scheduler.dtos.job import Job
-from poller.scheduler.dtos.request_parameters import RequestParameters
+from observer.scheduler.http_client import fetch_status
+from observer.scheduler.poll_logic.compute_polls import compute_next_poll
+from observer.config import DEFAULT_SERVICE_TIMEOUT as DEF_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY as DEF_MAX_CONCURRENCY, DEFAULT_STATUS_FIELD as DEF_STATUS_FIELD
+from observer.scheduler.dtos.job import Job
+from observer.scheduler.dtos.request_parameters import RequestParameters
 
 
 @dataclass

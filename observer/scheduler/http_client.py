@@ -1,5 +1,5 @@
 import httpx
-from poller.scheduler.dtos.request_parameters import RequestParameters
+from observer.scheduler.dtos.request_parameters import RequestParameters
 
 
 async def fetch_status(client, request_parameters: RequestParameters):

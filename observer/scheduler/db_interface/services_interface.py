@@ -1,9 +1,9 @@
 
-from poller.config import GLOBAL_PSEUDOSERVICE
-from poller.config import DUMMY_SERVICE
-from poller.scheduler.poll_logic.service import Service
-from poller.config import DEFAULT_SERVICE_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY
-from poller.api.db_interface.api_db_interface import get_db as get_api_db
+from observer.config import GLOBAL_PSEUDOSERVICE
+from observer.config import DUMMY_SERVICE
+from observer.scheduler.poll_logic.service import Service
+from observer.config import DEFAULT_SERVICE_TIMEOUT, DEFAULT_SERVICE_MAX_CONCURRENCY
+from observer.api.db_interface.api_db_interface import get_db as get_api_db
 
 
 RESERVED_NAMES = [GLOBAL_PSEUDOSERVICE, DUMMY_SERVICE]

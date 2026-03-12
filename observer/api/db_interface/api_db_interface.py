@@ -1,8 +1,11 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
 
-from poller.api.db_interface.api_db_sqlite import init_sqlite_db as init_api_db, insert_job, get_new_jobs
-from poller.scheduler.db_interface.scheduler_db_interface import init_db as init_scheduler_db
-from poller.api.db_interface.service_db_fake import get_services, get_services_filtered
-from poller.config import DEF_BATCH
+from observer.api.db_interface.api_db_sqlite import init_sqlite_db as init_api_db, insert_job, get_new_jobs
+from observer.scheduler.db_interface.scheduler_db_interface import init_db as init_scheduler_db
+from observer.api.db_interface.service_jsondb import get_services, get_services_filtered
+from observer.config import DEF_BATCH
 
 
 # Change here (+ config) only if not sqlite
@@ -19,7 +22,7 @@ def get_db(**kwargs):
 ################################
 import sqlite3
 from pathlib import Path
-from poller.config import API_DB
+from observer.config import API_DB
 
 class SQLITE_DB:
 

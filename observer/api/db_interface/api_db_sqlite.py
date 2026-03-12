@@ -1,8 +1,12 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 import sqlite3
 from pathlib import Path
 
-from poller.config import API_DB as DB, REPLACE_DBS, SCHEDULER_DB as SCHED_DB
-from poller.general_helpers import utcnow, backup_file, timestamp_for_db
+from observer.config import API_DB as DB, REPLACE_DBS, SCHEDULER_DB as SCHED_DB
+from observer.general_helpers import utcnow, backup_file, timestamp_for_db
 
 
 ##################

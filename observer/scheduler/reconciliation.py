@@ -1,9 +1,13 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 import asyncio
 import httpx
 import logging
 
-from poller.scheduler.db_interface.scheduler_db_interface import get_db
-from poller.config import GLOBAL_PSEUDOSERVICE
+from observer.scheduler.db_interface.scheduler_db_interface import get_db
+from observer.config import GLOBAL_PSEUDOSERVICE
 
 
 logger = logging.getLogger(__name__)

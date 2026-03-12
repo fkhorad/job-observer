@@ -1,7 +1,7 @@
 import logging
 
-from poller.api.db_interface.api_db_interface import get_db as get_api_db
-from poller.scheduler.db_interface.scheduler_db_interface import get_db
+from observer.api.db_interface.api_db_interface import get_db as get_api_db
+from observer.scheduler.db_interface.scheduler_db_interface import get_db
 
 
 logger = logging.getLogger(__name__)

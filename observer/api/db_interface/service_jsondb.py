@@ -1,6 +1,6 @@
 import json
 
-from poller.config import JSON_SERVICES
+from observer.config import JSON_SERVICES
 
 WHITELIST = {'name', 'method', 'url', 'query_params', 'body', 'static_headers', 'timeout', 'status_field', 'terminal_states', 'max_concurrency', 'auth_type'}
 BLACKLIST = {'auth_config'}

@@ -1,8 +1,12 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 
-from poller.general_helpers import utcnow
-from poller.config import CALLBACK_RETRIES
+from observer.general_helpers import utcnow
+from observer.config import CALLBACK_RETRIES
 
 
 DELIVERED = 'delivered'

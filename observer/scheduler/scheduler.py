@@ -1,12 +1,16 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 import asyncio
 import time
 import logging
 
-from poller.scheduler.db_interface.services_interface import SERVICES
-from poller.scheduler.db_interface.fetch_items import import_jobs, fetch_callbacks
-from poller.scheduler.db_interface.scheduler_db_interface import check_db
-from poller.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, LOGGING_LEVEL
-from poller.scheduler.reconciliation import run_reconciliation_phase
+from observer.scheduler.db_interface.services_interface import SERVICES
+from observer.scheduler.db_interface.fetch_items import import_jobs, fetch_callbacks
+from observer.scheduler.db_interface.scheduler_db_interface import check_db
+from observer.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, LOGGING_LEVEL
+from observer.scheduler.reconciliation import run_reconciliation_phase
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +42,6 @@ async def start():
         
         start = time.monotonic()
 
-        # TODO: recheck they do belong here
         semaphores = {
             name: asyncio.Semaphore(s.max_concurrency)
             for name, s in SERVICES.items()

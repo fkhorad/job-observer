@@ -1,8 +1,12 @@
+# Job Observer
+# Copyright (c) 2025 Name Surname
+# Licensed under the MIT License. See LICENSE file in the project root.
+
 from datetime import timedelta
 import random
 
-from poller.config import MIN_BACKOFF, MAX_BACKOFF
-from poller.general_helpers import utcnow
+from observer.config import MIN_BACKOFF, MAX_BACKOFF
+from observer.general_helpers import utcnow
 
 
 def compute_next_poll(unchanged_count):
