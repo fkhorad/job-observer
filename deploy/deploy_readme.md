@@ -41,14 +41,13 @@
     - make sure the default nginx site is disabled
 
 
-### THEN
+### THEN (and this could be scriptable)
+- pull repo
 - stop services
-- update repo
-- own service dir with main user (TEMP)
-- rsync observer dir from repo to /opt/observer
-- update venv in service dir
-- re-own service dir with service user
-- restart services
+- sudo rsync observer dir, requirements.txt and config dir from repo to /opt/observer; remember the --chown argument (which keeps correct ownership) AND --delete!
+- update venv in service dir (with service owner):
+    > sudo -u jobobserver /opt/job-observer/venv/bin/pip install -r /opt/job-observer/requirements.txt
+- re-start services
 
 
 ### NOTE
