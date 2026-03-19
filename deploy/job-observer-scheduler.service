@@ -9,7 +9,7 @@ WorkingDirectory=/opt/job-observer
 
 EnvironmentFile=/opt/job-observer/config/settings.env
 
-ExecStart=/opt/observer/venv/bin/python -m observer.scheduler.scheduler
+ExecStart=/opt/job-observer/venv/bin/python3 -m observer.scheduler.scheduler
 
 Restart=always
 RestartSec=3
