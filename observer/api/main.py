@@ -17,6 +17,10 @@ init_db()
 
 
 # Endpoints
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 # POST: /add_job --> inserts a new job
 class PostJobRequest(BaseModel):

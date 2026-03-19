@@ -1,0 +1,19 @@
+[Unit]
+Description=Job Observer Scheduler
+After=network.target
+
+[Service]
+User=jobobserver
+Group=jobobserver
+WorkingDirectory=/opt/observer
+
+EnvironmentFile=/opt/observer/config/settings.env
+
+ExecStart=/opt/observer/venv/bin/python -m scheduler.scheduler
+
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

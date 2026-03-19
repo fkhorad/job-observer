@@ -1,0 +1,21 @@
+[Unit]
+Description=Job Observer API
+After=network.target
+
+[Service]
+User=jobobserver
+Group=jobobserver
+WorkingDirectory=/opt/observer
+EnvironmentFile=/opt/observer/config/settings.env
+
+ExecStart=/opt/observer/venv/bin/gunicorn api.main:app \
+    -k uvicorn.workers.UvicornWorker \
+    --workers 1 \
+    --bind 127.0.0.1:${PORT} \
+    --forwarded-allow-ips="*"
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
