@@ -13,6 +13,7 @@ FIRST TIME:
   > python3 -m venv venv
 - create service user:
   > sudo adduser --system --group jobobserver
+  > sudo usermod -s /usr/sbin/nologin jobobserver
 - recursively own root service dir:
   > sudo chown -R jobobserver:jobobserver /opt/job-observer
 - copy service files job-observer-api.service, job-observer-scheduler.service to /etc/systemd/system/
@@ -35,7 +36,7 @@ THEN
 - rsync observer dir from repo to /opt/observer
 - re-own dir
 - work as user:
-  > sudo -u jobobserver -i
+  > sudo -u jobobserver <command>
 - > pip install -r requirements.txt
   
   inside opt/observer
