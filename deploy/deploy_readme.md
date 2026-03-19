@@ -1,4 +1,4 @@
-### PRE: ensure that python3 (sensible version) with pip and nginx are installed
+### PRE: ensure that python3 (sensible version) with pip and nginx are installed
 
 ### FIRST TIME:
 1. clone repo
