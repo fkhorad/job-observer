@@ -5,9 +5,9 @@ After=network.target
 [Service]
 User=jobobserver
 Group=jobobserver
-WorkingDirectory=/opt/observer
+WorkingDirectory=/opt/job-observer
 
-EnvironmentFile=/opt/observer/config/settings.env
+EnvironmentFile=/opt/job-observer/config/settings.env
 
 ExecStart=/opt/observer/venv/bin/python -m scheduler.scheduler
 

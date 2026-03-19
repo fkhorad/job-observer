@@ -2,16 +2,19 @@ PRE: ensure that python3 (sensible version) with pip and nginx are installed
 
 FIRST TIME:
 - clone repo
-- > sudo mkdir /opt/observer
-- > sudo mkdir /opt/observer/data
-- > sudo copy -r observer/* /opt/observer
-- in /opt/observer:
+- make service dirs:
+  > sudo mkdir /opt/job-observer
+  > sudo mkdir /opt/job-observer/data
+- copy files
+  > sudo copy -r observer /opt/job-observer/
+  > sudo copy requirements.txt /opt/job-observer/
+- in /opt/job-observer:
   > python3 -m venv venv
 - create service user:
   > sudo adduser --system --group jobobserver
   > sudo usermod -s /usr/sbin/nologin jobobserver
-- own dir:
-  > sudo chown -R jobmonitor:jobmonitor /opt/job-monitor
+- recursively own root service dir:
+  > sudo chown -R jobobserver:jobobserver /opt/observer
 - copy service files job-observer-api.service, job-observer-scheduler.service to /etc/systemd/system/
 - enable services:
 > ```
@@ -30,12 +33,16 @@ FIRST TIME:
 THEN
 - update repo
 - rsync observer dir from repo to /opt/observer
-- > pip install -r requirements.txt inside opt/observer
 - re-own dir
-- restart services
+- work as user:
+  > sudo -u jobobserver -i
+- > pip install -r requirements.txt
+  
+  inside opt/observer
+- back to standard user, restart services
 
 NOTE
 - view logs with
-  > journalctl -u job-monitor-api -f
-  
+  > journalctl -u job-observer-api -f
+
   ... or similar

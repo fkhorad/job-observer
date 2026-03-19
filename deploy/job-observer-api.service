@@ -5,8 +5,8 @@ After=network.target
 [Service]
 User=jobobserver
 Group=jobobserver
-WorkingDirectory=/opt/observer
-EnvironmentFile=/opt/observer/config/settings.env
+WorkingDirectory=/opt/job-observer
+EnvironmentFile=/opt/job-observer/config/settings.env
 
 ExecStart=/opt/observer/venv/bin/gunicorn api.main:app \
     -k uvicorn.workers.UvicornWorker \
