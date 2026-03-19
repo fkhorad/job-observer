@@ -21,7 +21,7 @@
     - recursively own root service dir:
     
         > sudo chown -R jobobserver:jobobserver /opt/job-observer
-6. Enable services
+6. Enable systemd services
     - copy service files job-observer-api.service, job-observer-scheduler.service to /etc/systemd/system/
     - enable services:
     
@@ -30,6 +30,8 @@
         > sudo systemctl enable job-observer-api
         > sudo systemctl enable job-observer-scheduler 
         > ```
+    
+    - Start services
 7. Setup nginx:
    - copy job-observer-reverse-proxy to /etc/nginx/sites-available/
    - enable the reverse proxy
@@ -39,6 +41,7 @@
         > sudo systemctl restart nginx
         > ```
     - make sure the default nginx site is disabled
+8. Remember that the newly deployed component will have a empty service.json, so it won't actually monitor anything! In current version, services.json must be set manually (it's deliberately ignored in the repo).
 
 
 ### THEN (and this could be scriptable)
