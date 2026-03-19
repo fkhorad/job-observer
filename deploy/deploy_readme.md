@@ -8,19 +8,19 @@ FIRST TIME:
 - copy files
   > sudo copy -r observer /opt/job-observer/
   > sudo copy requirements.txt /opt/job-observer/
+  > sudo copy -r deploy/config /opt/job-observer/
 - in /opt/job-observer:
   > python3 -m venv venv
 - create service user:
   > sudo adduser --system --group jobobserver
-  > sudo usermod -s /usr/sbin/nologin jobobserver
 - recursively own root service dir:
-  > sudo chown -R jobobserver:jobobserver /opt/observer
+  > sudo chown -R jobobserver:jobobserver /opt/job-observer
 - copy service files job-observer-api.service, job-observer-scheduler.service to /etc/systemd/system/
 - enable services:
 > ```
 > sudo systemctl daemon-reload
-> sudo systemctl enable job-monitor-api
-> sudo systemctl enable job-monitor-scheduler 
+> sudo systemctl enable job-observer-api
+> sudo systemctl enable job-observer-scheduler 
 > ```
 - copy job-observer-reverse-proxy to /etc/nginx/sites-available/
 - enable the reverse proxy
