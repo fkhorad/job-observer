@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from observer.config import JSON_SERVICES
 
@@ -18,6 +19,22 @@ def branch_aware_filter(obj):
             new_dict[k] = v
     #
     return new_dict
+
+
+def init_db():
+    path = Path(JSON_SERVICES)
+
+    # Ensure parent path exists
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Checks if file exists or inits empty file
+    try:
+        with open(JSON_SERVICES, 'r') as json_in:
+            json.load(json_in)
+    except (FileNotFoundError, json.JSONDecodeError):
+        default_data = {}
+        with open(JSON_SERVICES, 'w') as f:
+            json.dump(default_data, f)
 
 
 def get_services_filtered():
