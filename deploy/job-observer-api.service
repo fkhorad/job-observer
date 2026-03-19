@@ -8,7 +8,7 @@ Group=jobobserver
 WorkingDirectory=/opt/job-observer
 EnvironmentFile=/opt/job-observer/config/settings.env
 
-ExecStart=/opt/observer/venv/bin/gunicorn api.main:app \
+ExecStart=/opt/observer/venv/bin/gunicorn observer.api.main:app \
     -k uvicorn.workers.UvicornWorker \
     --workers 1 \
     --bind 127.0.0.1:${PORT} \
