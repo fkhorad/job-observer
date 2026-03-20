@@ -7,11 +7,11 @@
     > sudo mkdir /opt/job-observer
 
 3. copy needed files to service dir
-    > sudo copy -r observer /opt/job-observer/
+    > sudo cp -r observer /opt/job-observer/
   
-    > sudo copy requirements.txt /opt/job-observer/
+    > sudo cp requirements.txt /opt/job-observer/
     
-    > sudo copy -r deploy/config /opt/job-observer/
+    > sudo cp -r deploy/config /opt/job-observer/
 4. Create venv in service dir
 5. create service user 'jobobserver' (special user with no pwd and no login):
     > sudo adduser --system --group jobobserver
