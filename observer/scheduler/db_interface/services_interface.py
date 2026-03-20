@@ -32,7 +32,3 @@ def import_services():
         )
 
     return services
-
-
-# Service constant, to export
-SERVICES = import_services()

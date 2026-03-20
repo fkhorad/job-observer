@@ -2,17 +2,17 @@
 # Copyright (c) 2025 Name Surname
 # Licensed under the MIT License. See LICENSE file in the project root.
 
-from observer.api.db_interface.api_db_sqlite import init_sqlite_db as init_api_db, insert_job, get_new_jobs
-from observer.scheduler.db_interface.scheduler_db_interface import init_db as init_scheduler_db
+from observer.api.db_interface.api_db_sqlite import init_api_sqlite_db, init_scheduler_sqlite_db, insert_job, get_new_jobs
 from observer.api.db_interface.service_jsondb import get_services, get_services_filtered, init_db as init_services_db
 from observer.config import DEF_BATCH
 
 
 # Change here (+ config) only if not sqlite
+# NOTE: this initializes ALL DBs, not just the API one
 def init_db():
     init_services_db()
-    init_scheduler_db() # Initialized here in the api package, NOT in the scheduler package!
-    init_api_db()
+    init_scheduler_sqlite_db() # Initialized here in the api package, NOT in the scheduler package!
+    init_api_sqlite_db()
 
 def get_db(**kwargs):
     return SQLITE_DB(**kwargs)

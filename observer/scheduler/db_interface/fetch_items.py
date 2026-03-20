@@ -2,9 +2,10 @@ import logging
 
 from observer.api.db_interface.api_db_interface import get_db as get_api_db
 from observer.scheduler.db_interface.scheduler_db_interface import get_db
+from observer.config import LOGGER_NAME
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(LOGGER_NAME)
 
 def import_jobs():
 

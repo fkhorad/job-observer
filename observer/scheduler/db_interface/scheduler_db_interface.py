@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Name Surname
 # Licensed under the MIT License. See LICENSE file in the project root.
 
-from observer.scheduler.db_interface.scheduler_db_sqlite import init_sqlite_db, get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks
+from observer.scheduler.db_interface.scheduler_db_sqlite import get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks
 from observer.config import DEF_BATCH
 
 
@@ -13,9 +13,6 @@ def check_db():
             pass
     except sqlite3.OperationalError:
         raise Exception('DB not initialized')
-
-def init_db():
-    init_sqlite_db()
 
 def get_db(**kwargs):
     return SQLITE_DB(**kwargs)

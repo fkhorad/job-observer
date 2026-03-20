@@ -1,7 +1,6 @@
 import json
-from pathlib import Path
 
-from observer.config import JSON_SERVICES
+from observer.config import JSON_SERVICES_FILE
 
 WHITELIST = {'name', 'method', 'url', 'query_params', 'body', 'static_headers', 'timeout', 'status_field', 'terminal_states', 'max_concurrency', 'auth_type'}
 BLACKLIST = {'auth_config'}
@@ -22,29 +21,25 @@ def branch_aware_filter(obj):
 
 
 def init_db():
-    path = Path(JSON_SERVICES)
 
-    # Ensure parent path exists
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Checks if file exists or inits empty file
+    # Checks if services file exists and is readable; else inits empty file
     try:
-        with open(JSON_SERVICES, 'r') as json_in:
+        with open(JSON_SERVICES_FILE, 'r') as json_in:
             json.load(json_in)
     except (FileNotFoundError, json.JSONDecodeError):
         default_data = {}
-        with open(JSON_SERVICES, 'w') as f:
+        with open(JSON_SERVICES_FILE, 'w') as f:
             json.dump(default_data, f)
 
 
 def get_services_filtered():
-    with open(JSON_SERVICES, 'r') as json_in:
+    with open(JSON_SERVICES_FILE, 'r') as json_in:
         service_json = json.load(json_in, object_hook=branch_aware_filter)
     #
     return service_json
 
 def get_services():
-    with open(JSON_SERVICES, 'r') as json_in:
+    with open(JSON_SERVICES_FILE, 'r') as json_in:
         service_json = json.load(json_in)
     #
     return service_json

@@ -5,15 +5,80 @@
 import sqlite3
 from pathlib import Path
 
-from observer.config import API_DB as DB, REPLACE_DBS, SCHEDULER_DB as SCHED_DB
+from observer.config import API_DB as DB, REPLACE_DBS, SCHEDULER_DB
 from observer.general_helpers import utcnow, backup_file, timestamp_for_db
+from observer.config import DUMMY_SERVICE
+from observer.scheduler.poll_logic.callback import PENDING
 
 
 ##################
 # DB (RE)CREATION
 ##################
 
-def init_sqlite_db():
+def init_scheduler_sqlite_db():
+
+    if REPLACE_DBS:
+        backup_file(SCHEDULER_DB)
+
+    # Create tables (AND db file if necessary)
+    with sqlite3.connect(SCHEDULER_DB) as conn:
+        
+        # Special 'single-row' table, containing last checked job id
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS controller_cursor (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_seq INTEGER NOT NULL
+        )
+        """)
+        conn.execute("""
+        INSERT OR IGNORE INTO controller_cursor(id, last_seq) VALUES (1,0)
+        """)
+
+        # Job table
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS job_state (
+            job_id TEXT PRIMARY KEY,
+            service TEXT NOT NULL,
+            callback_url TEXT,
+            observed_state TEXT NOT NULL,
+            unchanged_count INTEGER NOT NULL DEFAULT 0,
+            next_poll_at TEXT NOT NULL,
+            is_terminal INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            terminal_at DATETIME,
+            UNIQUE(job_id, service)
+        )
+        """)
+
+        # Callback outbox
+        conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS callback_outbox (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            job_id TEXT NOT NULL,
+            callback_url TEXT NOT NULL,
+            job_terminal_state TEXT NOT NULL,
+            job_service TEXT NOT NULL,
+
+            callback_state TEXT NOT NULL DEFAULT '{PENDING}',
+            retry_count INTEGER NOT NULL DEFAULT 0,
+
+            created_at DATETIME NOT NULL,
+            next_attempt_at DATETIME,
+
+            last_error TEXT,
+            delivered_at DATETIME,
+            service TEXT DEFAULT '{DUMMY_SERVICE}'
+        );
+        """)
+
+        conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_callback_pending
+            ON callback_outbox (callback_state, next_attempt_at);
+        """)
+
+
+def init_api_sqlite_db():
 
     if REPLACE_DBS:
         backup_file(DB)
@@ -34,9 +99,9 @@ def init_sqlite_db():
 
 def sequence_check():
 
-    # Check last_seq value in SCHED_DB; if SCHED_DB does not exist yet, if last_seq there is not initialized, or if its value is 0, just silently return -- all these scenarios are possible and consistent
+    # Check last_seq value in SCHEDULER_DB; if SCHEDULER_DB does not exist yet, if last_seq there is not initialized, or if its value is 0, just silently return -- all these scenarios are possible and consistent
     try:
-        db_path = Path(SCHED_DB).resolve() # Handles OS-dependent (Windows...) vagaries in path handling
+        db_path = Path(SCHEDULER_DB).resolve() # Handles OS-dependent (Windows...) vagaries in path handling
         with sqlite3.connect(f'{db_path.as_uri()}?mode=ro', uri=True) as sched_conn: # open in read-only ONLY IF SCHEDULER DB ALREADY EXISTS
             last_seq_check = sched_conn.execute("SELECT last_seq FROM controller_cursor WHERE id=1").fetchone()
             if not last_seq_check:
@@ -47,7 +112,7 @@ def sequence_check():
     except:
         return
 
-    # If we have a nonzero value of last_seq in SCHED_DB, the actual consistency check starts.
+    # If we have a nonzero value of last_seq in SCHEDULER_DB, the actual consistency check starts.
     # Note that this SHOULD NOT BE NECESSARY IN GENERAL, but inconsistency can happen in testing condition and could conceivably surface in some restart situations in prod; this consistency constraint should never be harmful in any case, so it makes sense to keep it.
     with sqlite3.connect(DB) as conn:
 

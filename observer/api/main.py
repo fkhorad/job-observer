@@ -7,13 +7,15 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional
 
 from observer.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
-from observer.api.db_interface.api_db_interface import init_db, get_db as get_api_db
+from observer.api.db_interface.api_db_interface import get_db as get_api_db
+from observer.api.setup import bootstrap
 
 
 # INIT API
 app = FastAPI()
 #
-init_db()
+bootstrap()
+
 
 
 # Endpoints

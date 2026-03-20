@@ -34,7 +34,7 @@
    - copy job-observer-reverse-proxy.conf to /etc/nginx/sites-available/
    - enable the reverse proxy
         > ```
-        > sudo ln -s /etc/nginx/sites-available/job-monitor /etc/nginx/sites-enabled/
+        > sudo ln -s /etc/nginx/sites-available/job-observer-reverse-proxy.conf /etc/nginx/sites-enabled/
         > sudo nginx -t
         > sudo systemctl restart nginx
         > ```

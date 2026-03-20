@@ -2,80 +2,11 @@
 # Copyright (c) 2025 Name Surname
 # Licensed under the MIT License. See LICENSE file in the project root.
 
-import sqlite3
-
-from observer.config import SCHEDULER_DB, REPLACE_DBS, UNKNOWN_STATUS
-from observer.general_helpers import utcnow, backup_file, timestamp_for_db
+from observer.config import UNKNOWN_STATUS
+from observer.general_helpers import utcnow, timestamp_for_db
 from observer.scheduler.dtos.job import Job
-from observer.config import DUMMY_SERVICE
 from observer.scheduler.poll_logic.callback import Callback, PENDING
 
-
-##################
-# DB (RE)CREATION
-##################
-
-def init_sqlite_db():
-
-    if REPLACE_DBS:
-        backup_file(SCHEDULER_DB)
-
-    # Create tables (AND db file if necessary)
-    with sqlite3.connect(SCHEDULER_DB) as conn:
-        
-        # Special 'single-row' table, containing last checked job id
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS controller_cursor (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            last_seq INTEGER NOT NULL
-        )
-        """)
-        conn.execute("""
-        INSERT OR IGNORE INTO controller_cursor(id, last_seq) VALUES (1,0)
-        """)
-
-        # Job table
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS job_state (
-            job_id TEXT PRIMARY KEY,
-            service TEXT NOT NULL,
-            callback_url TEXT,
-            observed_state TEXT NOT NULL,
-            unchanged_count INTEGER NOT NULL DEFAULT 0,
-            next_poll_at TEXT NOT NULL,
-            is_terminal INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL,
-            terminal_at DATETIME,
-            UNIQUE(job_id, service)
-        )
-        """)
-
-        # Callback outbox
-        conn.execute(f"""
-        CREATE TABLE IF NOT EXISTS callback_outbox (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            job_id TEXT NOT NULL,
-            callback_url TEXT NOT NULL,
-            job_terminal_state TEXT NOT NULL,
-            job_service TEXT NOT NULL,
-
-            callback_state TEXT NOT NULL DEFAULT '{PENDING}',
-            retry_count INTEGER NOT NULL DEFAULT 0,
-
-            created_at DATETIME NOT NULL,
-            next_attempt_at DATETIME,
-
-            last_error TEXT,
-            delivered_at DATETIME,
-            service TEXT DEFAULT '{DUMMY_SERVICE}'
-        );
-        """)
-
-        conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_callback_pending
-            ON callback_outbox (callback_state, next_attempt_at);
-        """)
 
 ##########
 # QUERIES
