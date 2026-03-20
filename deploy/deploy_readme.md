@@ -47,6 +47,7 @@
 - pull repo
 - stop services (optional)
 - sudo rsync observer dir, requirements.txt and config dir from repo to /opt/observer; remember the include a --chown argument (keeps correct ownership) AND to --delete!
+    > sudo rsync -av --delete --chown=jobobserver:jobobserver observer/ /opt/job-observer/observer/
 - set/update venv in service dir (using service owner of course):
     > sudo -u jobobserver /opt/job-observer/venv/bin/pip install -r /opt/job-observer/requirements.txt
 - re-start services
