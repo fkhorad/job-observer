@@ -42,12 +42,20 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/job")
 async def create_job(req: Request):
+
+    # Optional 'number' in request body -- assign a 0 if missing or malformed
+    try:
+        body = await req.json()
+        number = int(float(body['number']))
+    except:
+        number = 0
+
     async with req.app.state.lock:
         try:
             id = get_random_string(6)
             job_id = f'{id}-{req.app.state.counter}'
             timestamp = time.perf_counter()
-            req.app.state.cache[job_id] = {'status': PENDING, 'timestamp': timestamp}
+            req.app.state.cache[job_id] = {'status': PENDING, 'timestamp': timestamp, 'number': number}
             req.app.state.counter += 1
             return {'job_id': job_id}
         except Exception:

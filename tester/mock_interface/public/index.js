@@ -1,4 +1,4 @@
-import { services } from './paplaines.js';
+import { services } from './services';
 
 
 const POLLING_REGISTRATION_ENDPOINT = "/api/add_job";
