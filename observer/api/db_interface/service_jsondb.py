@@ -43,3 +43,14 @@ def get_services():
         service_json = json.load(json_in)
     #
     return service_json
+
+def add_services(body: dict, overwrite: bool):
+    with open(JSON_SERVICES_FILE, 'rw') as json_db:
+        service_json = json.load(json_db)
+        for k, v in body.items():
+            if service_json.get(k) is None or overwrite:
+                service_json[k] = v
+        
+        json.dump(service_json, json_db)
+        return service_json
+

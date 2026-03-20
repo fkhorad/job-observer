@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See LICENSE file in the project root.
 
 from observer.api.db_interface.api_db_sqlite import init_api_sqlite_db, init_scheduler_sqlite_db, insert_job, get_new_jobs
-from observer.api.db_interface.service_jsondb import get_services, get_services_filtered, init_db as init_services_db
+from observer.api.db_interface.service_jsondb import get_services, get_services_filtered, init_db as init_services_db, add_services
 from observer.config import DEF_BATCH
 
 
@@ -67,5 +67,8 @@ class SQLITE_DB:
     def get_services(self):
         return get_services()
     
+    def add_services(self, body: dict, overwrite: bool):
+        return add_services(body, overwrite)
+
     def get_services_filtered(self):
         return get_services_filtered()

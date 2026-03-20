@@ -4,7 +4,7 @@
 
 from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from observer.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
 from observer.api.db_interface.api_db_interface import get_db as get_api_db
@@ -54,3 +54,13 @@ def get_services():
     with get_api_db(no_connection=True) as api_db:
         return api_db.get_services_filtered()
 
+
+# POST: /add_service --> registers a new service
+class PostServiceRequest(BaseModel):
+    data: Dict[str, Any]
+    overwrite: Optional[bool] = False
+#
+@app.post("/add_service")
+def add_service(req: PostServiceRequest):
+    with get_api_db(no_connection=True) as api_db:
+        return api_db.add_services(req.data, req.overwrite)
