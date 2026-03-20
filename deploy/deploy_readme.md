@@ -31,7 +31,7 @@
         > sudo systemctl enable job-observer-scheduler 
         > ```
 7. Setup nginx:
-   - copy job-observer-reverse-proxy to /etc/nginx/sites-available/
+   - copy job-observer-reverse-proxy.conf to /etc/nginx/sites-available/
    - enable the reverse proxy
         > ```
         > sudo ln -s /etc/nginx/sites-available/job-monitor /etc/nginx/sites-enabled/
