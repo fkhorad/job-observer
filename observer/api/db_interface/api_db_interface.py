@@ -67,8 +67,8 @@ class SQLITE_DB:
     def get_services(self):
         return get_services()
     
-    def add_services(self, body: dict, overwrite: bool):
-        return add_services(body, overwrite)
+    def add_services(self, data, overwrite):
+        return add_services(data, overwrite)
 
     def get_services_filtered(self):
         return get_services_filtered()

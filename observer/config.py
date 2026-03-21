@@ -2,11 +2,9 @@ from pathlib import Path
 import logging
 import os
 
-from observer.general_helpers import get_app_root_folder
-
 
 # Data folder absolute path (Path obj)
-DATA_FOLDER = Path( os.getenv('OBSERVER_DATA_DIR', get_app_root_folder() / 'data') ).resolve()
+DATA_FOLDER = Path( os.getenv('OBSERVER_DATA_DIR', Path(__file__).resolve().parent.parent / 'data') ).resolve()
 
 # DBs
 REPLACE_DBS = False

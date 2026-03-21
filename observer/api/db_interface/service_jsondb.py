@@ -1,6 +1,7 @@
 import json
+from fastapi import HTTPException
 
-from observer.config import JSON_SERVICES_FILE
+from observer.config import JSON_SERVICES_FOLDER, JSON_SERVICES_FILE
 
 
 WHITELIST = {'name', 'method', 'url', 'query_params', 'body', 'static_headers', 'timeout', 'status_field', 'terminal_states', 'max_concurrency', 'auth_type'}
@@ -22,6 +23,8 @@ def branch_aware_filter(obj):
 
 
 def init_db():
+
+    JSON_SERVICES_FOLDER.mkdir(parents=True, exist_ok=True)
 
     # Checks if services file exists and is readable; else inits empty file
     try:
@@ -57,6 +60,11 @@ def add_services(body: dict, overwrite: bool):
     for k, v in body.items():
         if service_json.get(k) is None or overwrite:
             service_json[k] = v
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Service '{k}' already exists. Set 'overwrite=true' in request body to replace it."
+            )
 
     # Overwrite service definitions with new object
     with open(JSON_SERVICES_FILE, 'w') as json_db:   

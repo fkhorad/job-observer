@@ -2,20 +2,19 @@
 # Copyright (c) 2025 Name Surname
 # Licensed under the MIT License. See LICENSE file in the project root.
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Header, HTTPException, status
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, Dict, Any
 
 from observer.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
 from observer.api.db_interface.api_db_interface import get_db as get_api_db
-from observer.api.setup import bootstrap
+from observer.api.setup import bootstrap, get_api_key
 
 
 # INIT API
 app = FastAPI()
 #
 bootstrap()
-
 
 
 # Endpoints
@@ -60,7 +59,7 @@ class PostServiceRequest(BaseModel):
     data: Dict[str, Any]
     overwrite: Optional[bool] = False
 #
-@app.post("/add_service")
-def add_service(req: PostServiceRequest):
+@app.post("/add_services")
+def add_services(req: PostServiceRequest, setup_key: str = Depends(get_api_key)):
     with get_api_db(no_connection=True) as api_db:
         return api_db.add_services(req.data, req.overwrite)

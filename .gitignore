@@ -6,5 +6,5 @@ __pycache__/
 node_modules/
 nohup.out
 data/
-services*.json
-services.json*
+*.backup
+*.env

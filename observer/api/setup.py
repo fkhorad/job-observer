@@ -1,28 +1,37 @@
-from pathlib import Path
 import sys
+from fastapi import Header, HTTPException, status
+import os
 
 from observer.api.db_interface.api_db_interface import init_db
-from observer.config import DATA_FOLDER, JSON_SERVICES_FOLDER
+from observer.config import DATA_FOLDER
 from observer.general_helpers import config_logging
 
 
 def bootstrap():
     logger = config_logging()
     try:
-        create_foldering()
+        create_data_folder()
         init_db()
     except Exception as e:
         logger.critical(f'Setup failure: {type(e).__name__}: {e}')
         sys.exit(1) # Hard exit; can prevent hangs on systemd
 
 
-def create_foldering():
-    datapath = Path(DATA_FOLDER)
-    datapath.mkdir(parents=True, exist_ok=True)
-    Path(JSON_SERVICES_FOLDER).mkdir(parents=True, exist_ok=True)
+def create_data_folder():
+    DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 
     # Write test
-    test_file = datapath / ".write_test"
+    test_file = DATA_FOLDER / ".write_test"
     test_file.touch()
     test_file.unlink() # Delete the test file
     
+
+# --- Auth dependency ---
+def get_api_key(setup_key: str | None = Header(default=None)):
+    if setup_key is None or setup_key != os.getenv('SETUP_KEY', ''):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid API key",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+    return setup_key

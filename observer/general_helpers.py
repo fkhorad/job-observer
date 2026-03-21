@@ -30,10 +30,6 @@ def backup_file(path: Path|str):
     file.rename(backup)
 
 
-def get_app_root_folder():
-    return Path(__file__).resolve().parent.parent
-
-
 def config_logging():
 
     # Create/Get the logger

@@ -12,6 +12,8 @@
     > sudo cp requirements.txt /opt/job-observer/
     
     > sudo cp -r deploy/config /opt/job-observer/
+
+    ... then **EDIT** the /opt/job-observer/config/settings.env.template appropriately to desired config and rename or copy it to /opt/job-observer/config/settings.env
 4. Create venv in service dir
 5. create service user 'jobobserver' (special user with no pwd and no login):
     > sudo adduser --system --group jobobserver
@@ -39,16 +41,18 @@
         > sudo systemctl restart nginx
         > ```
     - make sure the default nginx site is disabled
-    - Be mindful of port settings and possible shadowing if other sites are enabled!
+    - Be mindful of
+      - port settings
+      - possible shadowing if other sites are enabled!
 8. Remember that the newly deployed component will have a EMPTY services.json pseduodb, so it won't actually monitor anything! In current version, services.json must be set manually (it's deliberately ignored in the repo).
 
 
 ### DEPLOY -- works both first time and at updates (note: can create mini-script for this)
 - pull repo
 - stop services (optional)
-- sudo rsync observer dir, requirements.txt and config dir from repo to /opt/observer; remember the include a --chown argument (keeps correct ownership) AND to --delete!
+- sudo rsync observer dir and (if needed) requirements.txt from repo to /opt/observer; remember the include a --chown argument (keeps correct ownership) AND to --delete! Es.
     > sudo rsync -av --delete --chown=jobobserver:jobobserver observer/ /opt/job-observer/observer/
-- set/update venv in service dir (using service owner of course):
+- if requirements.txt was updated set/update venv in service dir (using service owner of course):
     > sudo -u jobobserver /opt/job-observer/venv/bin/pip install -r /opt/job-observer/requirements.txt
 - re-start services
 
