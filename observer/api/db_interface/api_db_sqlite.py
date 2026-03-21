@@ -5,14 +5,14 @@
 import sqlite3
 from pathlib import Path
 
-from observer.config import API_DB as DB, REPLACE_DBS, SCHEDULER_DB
+from observer.config import API_DB, REPLACE_DBS, SCHEDULER_DB
 from observer.general_helpers import utcnow, backup_file, timestamp_for_db
 from observer.config import DUMMY_SERVICE
 from observer.scheduler.poll_logic.callback import PENDING
 
 
 ##################
-# DB (RE)CREATION
+# DBs (RE)CREATION
 ##################
 
 def init_scheduler_sqlite_db():
@@ -81,9 +81,9 @@ def init_scheduler_sqlite_db():
 def init_api_sqlite_db():
 
     if REPLACE_DBS:
-        backup_file(DB)
+        backup_file(API_DB)
 
-    with sqlite3.connect(DB) as conn:
+    with sqlite3.connect(API_DB) as conn:
         conn.execute("""
         CREATE TABLE IF NOT EXISTS job_requests (
             seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,7 +114,7 @@ def sequence_check():
 
     # If we have a nonzero value of last_seq in SCHEDULER_DB, the actual consistency check starts.
     # Note that this SHOULD NOT BE NECESSARY IN GENERAL, but inconsistency can happen in testing condition and could conceivably surface in some restart situations in prod; this consistency constraint should never be harmful in any case, so it makes sense to keep it.
-    with sqlite3.connect(DB) as conn:
+    with sqlite3.connect(API_DB) as conn:
 
         # Check local status
         row = conn.execute("SELECT seq FROM sqlite_sequence WHERE name = 'job_requests'").fetchone()
@@ -148,5 +148,4 @@ def get_new_jobs(conn, last_seq, batch):
 def insert_job(conn, job_id, service, callback_url):
     now = timestamp_for_db(utcnow())
     conn.execute("INSERT OR IGNORE INTO job_requests(job_id, service, callback_url, created_at) VALUES (?, ?, ?, ?)", (job_id, service, callback_url, now))
-
 

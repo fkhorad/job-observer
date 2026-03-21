@@ -2,7 +2,8 @@ from pathlib import Path
 import sys
 
 from observer.api.db_interface.api_db_interface import init_db
-from observer.config import DATA_FOLDER, JSON_SERVICES_FOLDER, config_logging
+from observer.config import DATA_FOLDER, JSON_SERVICES_FOLDER
+from observer.general_helpers import config_logging
 
 
 def bootstrap():

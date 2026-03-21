@@ -2,6 +2,7 @@ import json
 
 from observer.config import JSON_SERVICES_FILE
 
+
 WHITELIST = {'name', 'method', 'url', 'query_params', 'body', 'static_headers', 'timeout', 'status_field', 'terminal_states', 'max_concurrency', 'auth_type'}
 BLACKLIST = {'auth_config'}
 
@@ -38,19 +39,27 @@ def get_services_filtered():
     #
     return service_json
 
+
 def get_services():
     with open(JSON_SERVICES_FILE, 'r') as json_in:
         service_json = json.load(json_in)
     #
     return service_json
 
+
 def add_services(body: dict, overwrite: bool):
-    with open(JSON_SERVICES_FILE, 'rw') as json_db:
+
+    # Get service definitions
+    with open(JSON_SERVICES_FILE, 'r') as json_db:
         service_json = json.load(json_db)
-        for k, v in body.items():
-            if service_json.get(k) is None or overwrite:
-                service_json[k] = v
-        
+
+    # Add or replace individual services
+    for k, v in body.items():
+        if service_json.get(k) is None or overwrite:
+            service_json[k] = v
+
+    # Overwrite service definitions with new object
+    with open(JSON_SERVICES_FILE, 'w') as json_db:   
         json.dump(service_json, json_db)
         return service_json
 

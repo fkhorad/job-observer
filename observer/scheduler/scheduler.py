@@ -6,10 +6,11 @@ import asyncio
 import time
 import logging
 
+from observer.general_helpers import config_logging
 from observer.scheduler.db_interface.services_interface import import_services
 from observer.scheduler.db_interface.fetch_items import import_jobs, fetch_callbacks
 from observer.scheduler.db_interface.scheduler_db_interface import check_db
-from observer.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, config_logging, LOGGER_NAME
+from observer.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, LOGGER_NAME
 from observer.scheduler.reconciliation import run_reconciliation_phase
 
 SERVICES = {}
