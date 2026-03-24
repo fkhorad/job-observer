@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Name Surname
 # Licensed under the MIT License. See LICENSE file in the project root.
 
-from fastapi import FastAPI, Depends, Header, HTTPException, status
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, Dict, Any
 
