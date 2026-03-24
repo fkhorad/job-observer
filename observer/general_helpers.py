@@ -33,19 +33,7 @@ def backup_file(path: Path|str):
 def config_logging():
 
     # Create/Get the logger
-    logger = logging.getLogger(LOGGER_NAME)
-
-    # Set level
-    logger.setLevel(LOGGING_LEVEL)
-
-    # Set handlers if not already set
-    if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-    # Stop propagation to keep other libs (es. Gunicorn) root loggers from doubling the output
-    logger.propagate = False
-
-    return logger
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+    )

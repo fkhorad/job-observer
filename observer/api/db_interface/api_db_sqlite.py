@@ -77,6 +77,14 @@ def init_scheduler_sqlite_db():
             ON callback_outbox (callback_state, next_attempt_at);
         """)
 
+        conn.execute('''
+        CREATE TABLE IF NOT EXISTS scheduler_heartbeat (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_tick DATETIME NOT NULL
+        );
+        ''')
+
+
 
 def init_api_sqlite_db():
 

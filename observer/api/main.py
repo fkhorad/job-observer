@@ -5,6 +5,7 @@
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, Dict, Any
+import logging
 
 from observer.scheduler.db_interface.scheduler_db_interface import get_db as get_scheduler_db
 from observer.api.db_interface.api_db_interface import get_db as get_api_db
@@ -15,12 +16,15 @@ from observer.api.setup import bootstrap, get_api_key
 app = FastAPI()
 #
 bootstrap()
+logger = logging.getLogger(__name__)
 
 
 # Endpoints
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    with get_scheduler_db(read_only=True) as sched_db:
+        heartbeat = sched_db.check_heartbeat()
+    return {"API status": "ok", 'Scheduler last heartbeat': heartbeat}
 
 
 # POST: /add_job --> inserts a new job

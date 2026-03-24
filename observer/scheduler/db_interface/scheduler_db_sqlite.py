@@ -23,6 +23,24 @@ def callback_factory(cursor, row):
     return Callback(**{col[0]: row[idx] for idx, col in enumerate(cursor.description)})
 
 
+# Heartbeat
+def check_heartbeat(conn):
+    heartbeat = conn.execute(
+        "SELECT last_seq FROM scheduler_heartbeat WHERE id=1"
+    ).fetchone()[0]
+    return {'last_heartbeat': heartbeat}
+#
+def upsert_heartbeat(conn):
+    now = timestamp_for_db(utcnow())
+    conn.execute("""
+        INSERT INTO scheduler_heartbeat (id, last_tick)
+        VALUES (1, ?)
+        ON CONFLICT(id) DO UPDATE SET last_tick = excluded.last_tick
+        """,
+        (now,)
+    )
+
+
 # LAST SEQ (=last job imported from api_db)
 def get_last_seq(conn):
     last_seq = conn.execute(

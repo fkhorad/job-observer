@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Name Surname
 # Licensed under the MIT License. See LICENSE file in the project root.
 
-from observer.scheduler.db_interface.scheduler_db_sqlite import get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks
+from observer.scheduler.db_interface.scheduler_db_sqlite import get_last_seq, insert_jobs, update_jobs, get_jobs_by_id, get_due_jobs, fetch_pending_callbacks, update_callbacks, check_heartbeat, upsert_heartbeat
 from observer.config import DEF_BATCH
 
 
@@ -49,6 +49,12 @@ class SQLITE_DB:
     def __exit__(self, exc_type, exc, tb):
         if self.conn is not None:
             self.conn.close()
+
+    def check_heartbeat(self):
+        return check_heartbeat(self)
+
+    def upsert_heartbeat(self):
+        return upsert_heartbeat(self)
 
     def get_new_jobs_parameters(self):
         return get_last_seq(self.conn)
