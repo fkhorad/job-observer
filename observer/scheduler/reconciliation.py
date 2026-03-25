@@ -34,7 +34,7 @@ async def run_reconciliation_phase(
         logger.exception('Problem in fetching items')
         items = []
 
-    logger.info('Items: ' + str(items))
+    logger.debug('Items: ' + str(items))
 
     if not items:
         return

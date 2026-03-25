@@ -33,7 +33,7 @@ async def start():
 
     # Main loop
     while True:
-        logger.info("Scheduler Tick")
+        logger.debug("Scheduler Tick")
         
         start = time.monotonic()
 

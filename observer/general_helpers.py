@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import logging
-import sys
-
-from observer.config import LOGGER_NAME, LOGGING_LEVEL
+import os
 
 
 def utcnow():
@@ -32,8 +30,26 @@ def backup_file(path: Path|str):
 
 def config_logging():
 
-    # Create/Get the logger
+    # Logging level
+    
+    # Default
+    logging_level = logging.INFO
+
+    # Try to read from env
+    logging_level_keyword = os.getenv('LOGGING_LEVEL', 'INFO').upper().strip()
+    #
+    if logging_level_keyword=='DEBUG':
+        logging_level = logging.DEBUG
+    elif logging_level_keyword=='WARNING':
+        logging_level = logging.WARNING
+    elif logging_level_keyword=='ERROR':
+        logging_level = logging.ERROR
+    elif logging_level_keyword=='CRITICAL':
+        logging_level = logging.CRITICAL
+
+
+    # Setup the root logger
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging_level,
         format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
     )

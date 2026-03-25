@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 # Endpoints
 @app.get("/health")
 def health():
+
+    logger.debug('/health endpoint successfully called')
+
     with get_scheduler_db(read_only=True) as sched_db:
         heartbeat = sched_db.check_heartbeat()
     return {"API status": "ok", 'Scheduler last heartbeat': heartbeat}
@@ -36,6 +39,8 @@ class PostJobRequest(BaseModel):
 @app.post("/add_job")
 def add_job(req: PostJobRequest):
 
+    logger.debug('/add_job endpoint successfully called')
+
     with get_api_db() as api_db:
         callback_url = str(req.callback_url) if req.callback_url is not None else None
         api_db.insert_job(req.job_id, req.service, callback_url)
@@ -46,6 +51,9 @@ def add_job(req: PostJobRequest):
 # GET: /job_status --> get job(s) status and aux parameter by JOB_ID; in principle it can return more than one (due to absence of service ID) -- TODO: discuss!
 @app.get("/job_status")
 def get_job_status(job_id: str, service: str):
+
+    logger.debug('/job_status endpoint successfully called')
+
     with get_scheduler_db(read_only=True) as sched_db:
         jobs = sched_db.get_jobs_by_id(job_id, service)
         return {'jobs': jobs}
@@ -54,6 +62,9 @@ def get_job_status(job_id: str, service: str):
 # GET: /services --> returns service list (with all configuration parameters)
 @app.get("/services")
 def get_services():
+
+    logger.debug('/services endpoint successfully called')
+
     with get_api_db(no_connection=True) as api_db:
         return api_db.get_services_filtered()
 
@@ -65,5 +76,8 @@ class PostServiceRequest(BaseModel):
 #
 @app.post("/add_services")
 def add_services(req: PostServiceRequest, setup_key: str = Depends(get_api_key)):
+
+    logger.debug('/add_services endpoint successfully called')
+
     with get_api_db(no_connection=True) as api_db:
         return api_db.add_services(req.data, req.overwrite)
