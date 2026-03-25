@@ -5,12 +5,11 @@ import logging
 
 from observer.api.db_interface.api_db_interface import init_db
 from observer.config import DATA_FOLDER
-from observer.general_helpers import config_logging
 
+
+logger = logging.getLogger(__name__)
 
 def bootstrap():
-    config_logging()
-    logger = logging.getLogger(__name__)
     try:
         create_data_folder()
         init_db()

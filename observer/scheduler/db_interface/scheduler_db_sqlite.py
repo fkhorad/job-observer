@@ -25,9 +25,10 @@ def callback_factory(cursor, row):
 
 # Heartbeat
 def check_heartbeat(conn):
-    heartbeat = conn.execute(
-        "SELECT last_seq FROM scheduler_heartbeat WHERE id=1"
-    ).fetchone()[0]
+    heartbeat_res = conn.execute(
+        "SELECT last_tick FROM scheduler_heartbeat WHERE id=1"
+    ).fetchone()
+    heartbeat = heartbeat_res[0] if heartbeat_res is not None else None
     return {'last_heartbeat': heartbeat}
 #
 def upsert_heartbeat(conn):

@@ -51,10 +51,10 @@ class SQLITE_DB:
             self.conn.close()
 
     def check_heartbeat(self):
-        return check_heartbeat(self)
+        return check_heartbeat(self.conn)
 
     def upsert_heartbeat(self):
-        return upsert_heartbeat(self)
+        return upsert_heartbeat(self.conn)
 
     def get_new_jobs_parameters(self):
         return get_last_seq(self.conn)

@@ -7,10 +7,10 @@ import httpx
 import logging
 
 from observer.scheduler.db_interface.scheduler_db_interface import get_db
-from observer.config import GLOBAL_PSEUDOSERVICE, LOGGER_NAME
+from observer.config import GLOBAL_PSEUDOSERVICE
 
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = logging.getLogger(__name__)
 
 async def run_reconciliation_phase(
     *,

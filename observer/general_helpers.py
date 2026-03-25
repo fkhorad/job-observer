@@ -36,7 +36,7 @@ def config_logging():
     logging_level = logging.INFO
 
     # Try to read from env
-    logging_level_keyword = os.getenv('LOGGING_LEVEL', 'INFO').upper().strip()
+    logging_level_keyword = os.getenv('LOGGING_LEVEL', '').upper().strip()
     #
     if logging_level_keyword=='DEBUG':
         logging_level = logging.DEBUG
@@ -47,9 +47,6 @@ def config_logging():
     elif logging_level_keyword=='CRITICAL':
         logging_level = logging.CRITICAL
 
+    logging_format="%(asctime)s [%(name)s] %(levelname)s | %(message)s"
 
-    # Setup the root logger
-    logging.basicConfig(
-        level=logging_level,
-        format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
-    )
+    return {'logging_level': logging_level, 'logging_format': logging_format}
