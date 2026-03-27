@@ -4,7 +4,7 @@ import os
 import logging
 
 from observer.api.db_interface.api_db_interface import init_db
-from observer.config import DATA_FOLDER
+from observer.config import DATA_FOLDER, SETUP_KEY
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,15 @@ def create_data_folder():
 
 # --- Auth dependency ---
 def get_api_key(setup_key: str | None = Header(default=None)):
-    if setup_key is None or setup_key != os.getenv('SETUP_KEY', ''):
+    if not SETUP_KEY:
+        logger.error("Admin attempted setup, but SETUP_KEY is not configured in .env")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid API key",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+    if not setup_key or setup_key != SETUP_KEY:
+        logger.warning("Invalid setup key provided.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid API key",

@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import logging
-import os
+
+from observer.config import LOGGING_LEVEL
 
 
 def utcnow():
@@ -35,8 +36,9 @@ def config_logging():
     # Default
     logging_level = logging.INFO
 
+    logging_level_keyword = LOGGING_LEVEL.upper().strip() if LOGGING_LEVEL else ''
+
     # Try to read from env
-    logging_level_keyword = os.getenv('LOGGING_LEVEL', '').upper().strip()
     #
     if logging_level_keyword=='DEBUG':
         logging_level = logging.DEBUG

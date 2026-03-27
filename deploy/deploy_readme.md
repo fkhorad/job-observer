@@ -1,5 +1,10 @@
-### PRE: ensure that python3 with pip ('recent enough' version) + nginx are installed
 
+# Deploy instructions: Linux server without Docker
+
+The deploy using Docker should be straightforward
+
+
+## PRE: ensure that python3 with pip ('recent enough' version) + nginx are installed
 
 ### FIRST SETUP:
 1. clone repo

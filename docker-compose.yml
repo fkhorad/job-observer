@@ -1,0 +1,36 @@
+services:
+  # Observer API
+  api:
+    build: .
+    image: ghcr.io/fkhorad/job-observer:main
+    restart: always
+    command: gunicorn observer.api.main:app -k uvicorn.workers.UvicornWorker    --workers 1 --bind 0.0.0.0:8000 --forwarded-allow-ips="*"
+    volumes:
+      - ${OBSERVER_DATA_DIR:-./data}:/app/data
+    environment:
+      - SETUP_KEY=${SETUP_KEY}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+
+  # Observer Scheduler
+  worker:
+    build: .
+    image: ghcr.io/fkhorad/job-observer:main
+    restart: always
+    command: python -m observer.scheduler.scheduler
+    volumes:
+      - ${OBSERVER_DATA_DIR:-./data}:/app/data
+    environment:
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+    depends_on:
+      - api
+
+  # The Reverse Proxy (Nginx)
+  nginx:
+    image: nginx:latest
+    ports:
+      # Maps a configurable host port to Nginx's internal port 80 -- THROWS AN ERROR if PORT is missing
+      - "127.0.0.1:${PORT?Variable PORT is missing in .env}:80"
+    volumes:
+      - ./deploy/job-observer-docker-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api

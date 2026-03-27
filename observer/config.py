@@ -1,5 +1,4 @@
 from pathlib import Path
-import logging
 import os
 
 
@@ -12,9 +11,13 @@ REPLACE_DBS = False
 # sqlite API DB parameters
 API_DB = DATA_FOLDER / 'job_requests.db'
 
+LOGGING_LEVEL = os.getenv('LOGGING_LEVEL')
+
+
 # services DB parameters
 JSON_SERVICES_FOLDER = DATA_FOLDER / 'services'
 JSON_SERVICES_FILE = JSON_SERVICES_FOLDER / 'services.json'
+SETUP_KEY = os.getenv('SETUP_KEY') # Required to set services through POST API
 
 # sqlite scheduler DB parameters
 SCHEDULER_DB = DATA_FOLDER / 'scheduler.db'

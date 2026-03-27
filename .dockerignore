@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+.DS_Store
+.vscode
+node_modules/
+nohup.out
+data/
+*.backup
+*.env
+
+# GIT
+.git
+.gitignore
