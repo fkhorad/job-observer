@@ -48,7 +48,7 @@ def get_int(service_name, config_dict, key, default):
 def get_float(service_name, config_dict, key, default):
     value = config_dict.get(key)
     try:
-        return int(value)
+        return float(value)
     except (ValueError, TypeError):
         logger.warning(f'Using default value for unparsable {key} in {service_name}, value was {value}')
         return default
