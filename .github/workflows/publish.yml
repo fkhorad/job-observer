@@ -33,3 +33,12 @@ jobs:
           push: true
           # This tags it as 'latest'
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Build and push Nginx Proxy Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.nginx
+          push: true
+          # This creates a second package called 'job-observer-proxy'
+          tags: ghcr.io/${{ github.repository }}-proxy:latest
