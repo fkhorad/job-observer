@@ -1,0 +1,6 @@
+# Use the lightweight production version of Nginx
+FROM nginx:stable-alpine
+
+# Copy config into the image
+COPY ./deploy/job-observer-docker-proxy.conf /etc/nginx/conf.d/default.conf
+
