@@ -10,7 +10,7 @@ from observer.general_helpers import config_logging
 from observer.scheduler.db_interface.services_interface import import_services
 from observer.scheduler.db_interface.fetch_items import import_jobs, fetch_callbacks
 from observer.scheduler.db_interface.scheduler_db_interface import check_db, get_db
-from observer.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY
+from observer.config import DUMMY_SERVICE, GLOBAL_PSEUDOSERVICE, SCHEDULER_IDLE_SLEEP, SCHEDULER_BUSY_SLEEP, RUN_ONCE, GLOBAL_CONCURRENCY, SETUP_MAX_RETRIES, SETUP_DELAY
 from observer.scheduler.reconciliation import run_reconciliation_phase
 
 
@@ -20,25 +20,33 @@ logging.basicConfig(level=LOGGING_CONF['logging_level'], format=LOGGING_CONF['lo
 logger = logging.getLogger(__name__)
 
 SERVICES = {}
-def init():
+async def init():
 
-    try:
-        global SERVICES
-        SERVICES = import_services()
-        check_db()
-    except:
-        logger.exception('Crushed on init')
-        raise
+    for attempt in range(1, SETUP_MAX_RETRIES + 1):
+        try:
+            global SERVICES
+            SERVICES = import_services()
+            check_db()
+            return # On success
+        except:
+            if attempt < SETUP_MAX_RETRIES:
+                logger.warning('Waiting for data environment...')
+                await asyncio.sleep(SETUP_DELAY)
+            else:
+                logger.exception(f'Data check failed after {SETUP_MAX_RETRIES} attempts, giving up')
+                raise
 
 
 # RUN
 async def start():
 
-    init()
+    await init()
 
     # Main loop
     while True:
         logger.debug("Scheduler Tick")
+        global SERVICES
+        SERVICES = import_services() # TODO: harden
         
         with get_db() as db:
             db.upsert_heartbeat()

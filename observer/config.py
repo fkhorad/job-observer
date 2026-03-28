@@ -34,7 +34,8 @@ CALLBACK_RETRIES = 15
 #
 MIN_BACKOFF = 2 # seconds
 MAX_BACKOFF = 60 # seconds
-
+SETUP_MAX_RETRIES = 3
+SETUP_DELAY = 3
 
 # Service parameters
 DEFAULT_STATUS_FIELD = 'status'

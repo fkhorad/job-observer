@@ -6,6 +6,7 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from typing import Dict, Any, Set, Optional
+import os
 
 from observer.scheduler.http_client import fetch_status
 from observer.scheduler.poll_logic.compute_polls import compute_next_poll
@@ -150,8 +151,8 @@ class Service:
         """
         if self.auth_type == "client_credentials_basic":
             token_url = self.auth_config["token_url"]
-            client_id = self.auth_config["client_id"]
-            client_secret = self.auth_config["client_secret"]
+            client_id = get_from_env(self.auth_config, "client_id")
+            client_secret = get_from_env(self.auth_config, "client_secret")
 
             response = await client.post(
                 token_url,
@@ -170,12 +171,12 @@ class Service:
 
         elif self.auth_type == "client_credentials_headers":
             token_url = self.auth_config["token_url"]
-
+            client_credentials = get_from_env(self.auth_config, 'client_credentials')
             response = await client.post(
                 token_url,
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": f"Basic {self.auth_config['client_credentials']}"
+                    "Authorization": f"Basic {client_credentials}"
                 },
                 data={
                     "grant_type": "client_credentials"
@@ -188,11 +189,12 @@ class Service:
 
             return payload["access_token"], payload["expires_in"]
 
-
         raise RuntimeError(f"Unsupported auth_type: {self.auth_type}")
-    
 
-# Helper for request parameters definition
+
+## Helpers
+
+# Request parameters definition
 def render(v, job_id: str):
     if isinstance(v, str):
         return v.replace("{job_id}", job_id)
@@ -201,3 +203,9 @@ def render(v, job_id: str):
     if isinstance(v, list):
         return [render(x, job_id) for x in v]
     return v
+
+# Read sensitive parameters from environment
+def get_from_env(dict_, key):
+    val = dict_.get(key)
+    env_key = val if val else key
+    return os.getenv(env_key)
