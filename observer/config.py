@@ -2,6 +2,8 @@ from pathlib import Path
 import os
 
 
+APP_NAMESPACE = 'observer'
+
 # Data folder absolute path (Path obj)
 DATA_FOLDER = Path( os.getenv('OBSERVER_DATA_DIR', Path(__file__).resolve().parent.parent / 'data') ).resolve()
 

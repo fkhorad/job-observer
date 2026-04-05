@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import logging
 
-from observer.config import LOGGING_LEVEL
+from observer.config import LOGGING_LEVEL, APP_NAMESPACE
 
 
 def utcnow():
@@ -51,4 +51,15 @@ def config_logging():
 
     logging_format="%(asctime)s [%(name)s] %(levelname)s | %(message)s"
 
-    return {'logging_level': logging_level, 'logging_format': logging_format}
+    # Set logger for app
+    logger = logging.getLogger(APP_NAMESPACE)
+
+    logger.setLevel(logging_level)
+
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(logging_format)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    logger.propagate = False  # prevents duplication via root

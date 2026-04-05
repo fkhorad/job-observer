@@ -11,12 +11,12 @@ from observer.scheduler.db_interface.scheduler_db_interface import get_db as get
 from observer.api.db_interface.api_db_interface import get_db as get_api_db
 from observer.api.setup import bootstrap, get_api_key
 from observer.general_helpers import config_logging
+from observer.config import APP_NAMESPACE
 
 
 # Logging
-LOGGING_CONF = config_logging()
-logging.basicConfig(level=LOGGING_CONF['logging_level'], format=LOGGING_CONF['logging_format'])
-logger = logging.getLogger(__name__)
+config_logging()
+logger = logging.getLogger(f'{APP_NAMESPACE}.{__name__}')
 
 # INIT API
 app = FastAPI()

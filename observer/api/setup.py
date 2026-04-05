@@ -1,13 +1,12 @@
 import sys
 from fastapi import Header, HTTPException, status
-import os
 import logging
 
 from observer.api.db_interface.api_db_interface import init_db
-from observer.config import DATA_FOLDER, SETUP_KEY
+from observer.config import DATA_FOLDER, SETUP_KEY, APP_NAMESPACE
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f'{APP_NAMESPACE}.{__name__}')
 
 def bootstrap():
     try:
