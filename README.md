@@ -141,13 +141,16 @@ Current public release: `v0.1.0`
 
 ## Citation
 
-If you use this software in research or infrastructure projects, please cite it as:
+If you use this software in research or infrastructure projects, please cite the archived software release on Zenodo.
 
+Example citation format:
+
+```text
+Coradeschi, Francesco. Job Observer (Version 0.1.0) [Software].
+Zenodo. https://doi.org/10.5281/zenodo.20288305
 ```
-Coradeschi, Francesco (2026). Job Observer.
-Software developed for the H2IOSC project.
-https://github.com/fkhorad/job-observer
-```
+
+A BibTeX entry is available through the Zenodo release page.
 
 
 ## Contributing
